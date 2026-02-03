@@ -1,0 +1,70 @@
+.bottom-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-column-gap: 10px;
+    grid-row-gap: 10px;
+    margin: 20px 10px 10px;
+}
+
+.btn-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--td-bg-color-secondarycontainer);
+    border-radius: var(--td-radius-default);
+}
+
+.btn-item .btn-left {
+    width: 28px;
+    height: 28px;
+    margin-right: 14px;
+    opacity: 0.9;
+}
+
+.btn-item .btn-right .btn-title {
+    font-size: var(--td-font-size-base);
+    font-weight: 700;
+}
+
+.btn-item .btn-right .btn-desc {
+    color: var(--td-text-color-secondary);
+    font-size: var(--td-font-size-xs);
+}
+
+.btn-item.span  {
+    grid-column: span 2;
+    padding: 8px 16px;
+}
+
+.btn-item.span .btn-left {
+    width: 18px;
+    height: 18px;
+    margin-right: 0;
+}
+
+.btn-item.span .btn-right {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.btn-item.span .btn-right .btn-title {
+    margin: 0 10px;
+}
+
+.feedback-box:first-child {
+    margin-top: var(--td-spacer-4);
+    margin-bottom: var(--td-spacer-2);
+    display: flex;
+    align-items: center;
+}
+
+.feedback-label {
+    --td-font-size-m: var(--td-font-size-base);
+}
+
+.feedback-input {
+    background: var(--td-bg-color-page)!important;
+    border-radius: var(--td-radius-default);
+    padding: 24rpx 20px!important;
+}

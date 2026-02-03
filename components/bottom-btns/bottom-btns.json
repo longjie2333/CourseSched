@@ -1,0 +1,9 @@
+{
+    "component": true,
+    "usingComponents": {
+        "t-dialog": "tdesign-miniprogram/dialog/dialog",
+        "t-input": "tdesign-miniprogram/input/input",
+        "t-textarea": "tdesign-miniprogram/textarea/textarea",
+        "t-message": "tdesign-miniprogram/message/message"
+    }
+}

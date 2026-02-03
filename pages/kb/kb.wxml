@@ -1,0 +1,84 @@
+<navbar
+    title="{{ cacheData.clas }}"
+    currentWeeks="{{ currentWeeksIndex + 1 }}"
+    showVacationTag="{{ isVacation }}"
+    ifWeeksChanging="{{ ifWeeksChanging }}"
+    bind:onTitleTap="displayLoginDialog"
+    bind:onManualUpdateTap="displayManualUpdateDialog"
+    bind:onWeeksChange="onWeeksChange"
+    bind:onRollbackTap="onRollback"
+/>
+
+<t-tabs
+    theme="tag"
+    defaultValue="0"
+    value="{{ currentWeeksIndex }}"
+    style="{{ navbarStyle }}--td-tab-item-height: 96rpx;--week-row-height: 100rpx;--week-row-padding-top: 2px;"
+    spaceEvenly="{{ false }}"
+    showTabsTag="{{ show_tabs_tag }}"
+    animation="{{ { duration: 0.45 } }}"
+    bind:change="onTabsChangeOrSliding"
+>
+    <view
+        slot="middle"
+        class="weekRow"
+    >
+        <view
+            class="{{ ifToday === renderData[currentWeeksIndex][0][week - 1] ? 'today' : '' }}"
+            wx:for="{{ weekTitles }}"
+            wx:key="weekTitle"
+            wx:for-index="week"
+        >
+            <view class="weekRowText">{{ item }}</view>
+            <view class="weekRowDate">{{ renderData[currentWeeksIndex][0][week - 1] }}</view>
+        </view>
+    </view>
+
+    <t-tab-panel
+        value="{{ weeks }}"
+        label="第{{ weeks + 1 }}周"
+        wx:for="{{ 20 }}"
+        wx:key="semesterWeeks"
+        wx:for-index="weeks"
+    >
+        <course-grid
+            weeks="{{ weeks }}"
+            ifToday="{{ ifToday }}"
+            courseData="{{ renderData }}"
+            wx:if="{{ weeks < 18 }}"
+            bind:onCourseTap="displaySomeDetail"
+        />
+
+        <exam-time-grid
+            style="min-height: calc(100vh - (var(--navbar-height-full) + var(--week-row-height) + var(--week-row-padding-top) + 32px));"
+            weeks="{{ weeks }}"
+            examTimeData="{{ examTimeData }}"
+            showExamTimeLoading="{{ show_exam_time_loading }}"
+            showExamTimeLoadFail="{{ show_exam_time_loadFail }}"
+            wx:else
+            bind:onExamItemTap="displaySomeDetail"
+        />
+    </t-tab-panel>
+</t-tabs>
+
+<bottom-btns
+    ifVacation="{{ isVacation }}"
+    bind:onReportTap="navigateToReport"
+/>
+
+<login-dialog
+    visible="{{ show_login_dialog }}"
+    bind:onLoggingIn="onLoggingIn"
+/>
+
+<manual-update-dialog
+    visible="{{ show_manual_update_dialog }}"
+    bind:onManualUpdate="onManualUpdate"
+/>
+
+<detail-popup
+    visible="{{ show_detail_popup }}"
+    content="{{ detailContent }}"
+/>
+
+<t-message id="t-message" />

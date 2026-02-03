@@ -1,0 +1,39 @@
+page {
+    color: var(--td-text-color-primary);
+    background-color: var(--td-bg-color-container);
+    padding: 0;
+    padding-bottom: 30px;
+}
+
+.weekRow {
+    display: grid;
+    grid-template-columns: 35px repeat(7, 11.68%);
+    grid-column-gap: 4px;
+    justify-content: center;
+    background: var(--td-bg-color-container);
+    height: var(--week-row-height);
+    padding-top: var(--week-row-padding-top);
+}
+
+.weekRow > view {
+    margin: 4px 0;
+    padding: 3px 0;
+    border-radius: var(--td-radius-default);
+    font-size: small;
+    text-align: center;
+}
+
+.weekRow .today {
+    color: var(--td-primary-color-7);
+    font-weight: bold;
+    background-color: var(--td-primary-color-1);
+}
+
+.weekRow .weekRowDate {
+    font-size: 10px;
+    margin-top: 2px;
+}
+
+.t-tabs__item-inner {
+    border-radius: var(--td-tag-square-border-radius, 8rpx)!important;
+}

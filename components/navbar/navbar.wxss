@@ -1,0 +1,26 @@
+.navbar-toolbar {
+    display: flex;
+}
+
+.navbar-toolbar .navbar-tool {
+    --td-tag-large-height: 64rpx;
+
+    margin-left: 4px;
+    z-index: 99;
+}
+
+.navbar-toolbar .navbar-tool:first-child {
+    margin-left: 0;
+}
+
+.t-icon-ended:before {
+    content: "🎉";
+    display: inline-block;
+    vertical-align: super;
+}
+
+.t-icon-yeh:before {
+    content: "🤪";
+    display: inline-block;
+    vertical-align: super;
+}

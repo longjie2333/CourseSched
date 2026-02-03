@@ -1,0 +1,61 @@
+<view
+    class="examTimeBox"
+    style="{{ style }}"
+>
+    <view class="examTimeTip">期末考试周到啦！轻松还是艰难？</view>
+
+    <view
+        class="result-card"
+        wx:if="{{ showExamTimeLoading }}"
+    >
+        <t-loading
+            size="40px"
+            theme="dots"
+            layout="vertical"
+        >
+            <view class="loadingText">查询中</view>
+        </t-loading>
+    </view>
+
+    <t-result
+        class="result-card"
+        icon="{{ { name: 'search-error', size: 50 } }}"
+        title="查询失败，请稍后再试"
+        wx:elif="{{ showExamTimeLoadFail }}"
+    />
+
+    <t-result
+        class="result-card"
+        icon="{{ { name: 'no-result', size: 50 } }}"
+        title="本学期暂无考试安排"
+        wx:elif="{{ examTimeData.length === 0 }}"
+    />
+
+    <view
+        class="examTimeMain"
+        wx:else
+    >
+        <view
+            id="exam.{{ index }}"
+            class="examTimeItem"
+            wx:for="{{ examTimeData }}"
+            wx:key="examTimeData"
+            wx:if="{{ (weeks + 1) == item.exam_period }}"
+            bind:tap="onExamItemTap"
+        >
+            <view class="examCourse">{{ item.course_name }}</view>
+            <view class="examInfo">
+                <view class="examInfoLeft">
+                    <view class="examInfoDesc">时间/地点：</view>
+                    <view>{{ item.date }}，周{{ weekTitles[item.week] }}，{{ item.time }}</view>
+                    <view>{{ item.exam_room }}</view>
+                </view>
+                <view class="examInfoRight">
+                    <view class="examInfoDesc">监考：</view>
+                    <view>{{ item.invigilation1 }}</view>
+                    <view>{{ item.invigilation2 }}</view>
+                </view>
+            </view>
+        </view>
+    </view>
+</view>

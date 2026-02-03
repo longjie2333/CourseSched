@@ -1,0 +1,14 @@
+.loginBtns .loginBtn + .loginBtn {
+    margin: 0 24rpx;
+}
+
+.loginBtns .loginBtn:only-child {
+    margin-right: 24rpx;
+}
+
+.loginFromInput {
+    background: var(--td-bg-color-page)!important;
+    border-radius: 12rpx;
+    margin-top: 40rpx;
+    padding: 18rpx 32rpx!important;
+}

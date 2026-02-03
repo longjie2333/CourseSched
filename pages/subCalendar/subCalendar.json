@@ -1,0 +1,13 @@
+{
+    "usingComponents": {
+        "t-steps": "tdesign-miniprogram/steps/steps",
+        "t-step-item": "tdesign-miniprogram/step-item/step-item",
+        "t-picker": "tdesign-miniprogram/picker/picker",
+        "t-picker-item": "tdesign-miniprogram/picker-item/picker-item",
+        "t-input": "tdesign-miniprogram/input/input",
+        "t-button": "tdesign-miniprogram/button/button",
+        "t-message": "tdesign-miniprogram/message/message",
+        "navbar": "/components/navbar/navbar"
+    },
+    "navigationStyle": "custom"
+}

@@ -1,0 +1,73 @@
+<t-popup
+    placement="bottom"
+    visible="{{ visible }}"
+    bind:visible-change="hiddenPopup"
+>
+    <view
+        class="popup-block"
+        wx:if="{{ content._type === 'course' }}"
+    >
+        <view class="popup-header">
+            <view class="popup-title">{{ content.title }}</view>
+        </view>
+        <view class="popup-content">
+            <view class="popup-list">
+                <t-icon class="icon" name="user"/>
+                <text user-select>{{ content.teacher }}</text>
+            </view>
+            <view class="popup-list">
+                <t-icon class="icon" name="location"/>
+                <text user-select>{{ content.location }}</text>
+            </view>
+            <view class="popup-list">
+                <t-icon class="icon" name="calendar-1"/>
+                <text user-select>{{ content.weeks }} 周，周{{ weekTitles[content.week] }}，第 {{ content.start + '-' + content.end }} 节</text>
+            </view>
+            <view class="popup-list" wx:if="{{ content.odd_even_weeks }}">
+                <t-icon class="icon" name="assignment"/>
+                <text user-select>{{ content.odd_even_weeks }}</text>
+            </view>
+            <view class="popup-list" wx:if="{{ content.remark }}">
+                <t-icon class="icon" name="assignment"/>
+                <text user-select>{{ content.remark }}</text>
+            </view>
+        </view>
+    </view>
+
+    <view
+        class="popup-block"
+        wx:if="{{ content._type === 'exam' }}"
+    >
+        <view class="popup-header">
+            <view class="popup-title">{{ content.course_name }}</view>
+        </view>
+        <view class="popup-content">
+            <view class="popup-box">
+                <view class="popup-box-title">考试安排</view>
+                <view class="popup-list">
+                    <t-icon class="icon" name="user"/>
+                    <text user-select>{{ content.invigilation1 }}，{{ content.invigilation2 }}</text>
+                </view>
+                <view class="popup-list">
+                    <t-icon class="icon" name="location"/>
+                    <text user-select>{{ content.exam_room }}</text>
+                </view>
+                <view class="popup-list">
+                    <t-icon class="icon" name="calendar-1"/>
+                    <text user-select>{{ content.date }}，周{{ weekTitle[content.week] }}，{{ content.time }}</text>
+                </view>
+            </view>
+            <view class="popup-box">
+                <view class="popup-box-title">授课老师/地点</view>
+                <view class="popup-list">
+                    <t-icon class="icon" name="user"/>
+                    <text user-select>{{ content.teacher }}</text>
+                </view>
+                <view class="popup-list">
+                    <t-icon class="icon" name="location"/>
+                    <text user-select>{{ content.location }}</text>
+                </view>
+            </view>
+        </view>
+    </view>
+</t-popup>

@@ -1,0 +1,62 @@
+<view class="courseGrid">
+    <view
+        class="weekCol"
+        wx:for="{{ weekTitles }}"
+        wx:for-index="week"
+        wx:key="index"
+    >
+        <!--  顶部，行，星期  -->
+<!--        <view-->
+<!--            class="weekRow {{ ifToday === courseData[weeks][0][week - 1] ? 'today' : '' }}"-->
+<!--        >-->
+<!--            <view class="weekRowBg">-->
+<!--                <view class="weekRowText">{{ item }}</view>-->
+<!--                <view class="weekRowDate">{{ courseData[weeks][0][week - 1] }}</view>-->
+<!--            </view>-->
+<!--        </view>-->
+
+        <block
+            wx:for="{{ timeTitles }}"
+            wx:for-index="time"
+            wx:key="index"
+        >
+            <!-- 左侧，格子，节次和时间点 -->
+            <view
+                class="timeCell"
+                wx:if="{{ week === 0 }}"
+            >
+                <view>
+                    <view style="font-size: 14px;margin-bottom: 4px;">{{ time + 1 }}</view>
+                    <view>{{ item[0] }}</view>
+                    <view>{{ item[1] }}</view>
+                </view>
+            </view>
+
+            <view
+                class="classCell emptyCourse"
+                wx:elif="{{ !courseData.length }}"
+            />
+
+            <block wx:elif="{{ courseData[weeks][week][time] !== 'ignore'}}">
+                <!-- 中间，格子，课程 -->
+                <view
+                    class="classCell emptyCourse"
+                    wx:if="{{ courseData[weeks][week][time] === 'free' }}"
+                />
+
+                <view
+                    id="course.{{ weeks }}.{{week}}.{{ time }}"
+                    class="classCell"
+                    style="grid-row-start: {{ courseData[weeks][week][time].start }};grid-row-end: {{ courseData[weeks][week][time].end + 1 }};background-color: {{ courseData[weeks][week][time].background }};"
+                    wx:else
+                    bind:tap="onCourseTap"
+                >
+                    <view>
+                        <view class="classCellTitle">{{ courseData[weeks][week][time].title }}</view>
+                        <view class="classCellLocation">{{ courseData[weeks][week][time].shortLocat }}</view>
+                    </view>
+                </view>
+            </block>
+        </block>
+    </view>
+</view>

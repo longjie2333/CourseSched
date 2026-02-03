@@ -1,0 +1,45 @@
+@import '/miniprogram_npm/tdesign-miniprogram/common/style/theme/_index.wxss';
+
+.card {
+  border-radius: var(--td-radius-default);
+  background: var(--td-bg-color-secondarycontainer);
+  margin: 20px;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.t-icon-ended:before {
+  content: "🎉";
+  display: inline-block;
+  vertical-align: super;
+}
+
+.t-icon-yeh:before {
+  content: "🤪";
+  display: inline-block;
+  vertical-align: super;
+}
+
+.t-icon-good:before {
+  content: "👍";
+  display: inline-block;
+  vertical-align: super;
+}
+
+.t-icon-heyhey:before {
+  content: "😎";
+  display: inline-block;
+  vertical-align: super;
+}
+
+.t-icon-trophy:before {
+  content: "🏆";
+  display: inline-block;
+  vertical-align: super;
+}
+
+.t-icon-empty:before {
+  content: "📋";
+  display: inline-block;
+  vertical-align: super;
+}

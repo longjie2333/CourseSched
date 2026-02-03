@@ -1,0 +1,10 @@
+{
+  "light": {
+    "bg-color-container": "#ffffff",
+    "text-color-primary": "black"
+  },
+  "dark": {
+    "bg-color-container": "#242424",
+    "text-color-primary": "white"
+  }
+}

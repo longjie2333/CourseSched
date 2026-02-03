@@ -1,0 +1,19 @@
+{
+  "pages": [
+    "pages/kb/kb",
+    "pages/report/report",
+    "pages/subCalendar/subCalendar"
+  ],
+  "usingComponents": {},
+  "window": {
+    "navigationBarTextStyle": "@text-color-primary",
+    "navigationBarTitleText": "小江课表",
+    "navigationBarBackgroundColor": "@bg-color-container",
+    "backgroundColor": "@bg-color-container"
+  },
+  "darkmode": true,
+  "themeLocation": "theme.json",
+  "componentFramework": "glass-easel",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

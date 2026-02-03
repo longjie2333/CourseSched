@@ -1,0 +1,65 @@
+.result-card {
+    --td-result-title-font-size: var(--td-font-size-title-medium);
+    border-radius: var(--td-radius-default);
+    background-color: var(--td-bg-color-secondarycontainer);
+    margin: 0 8px 8px;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+.result-card .loadingText {
+    line-height: 56rpx;
+    font-size: var(--td-font-size-title-medium);
+    font-weight: 700;
+}
+
+.examTimeTip, .examTimeItem, .emptyExamTime {
+    border-radius: var(--td-radius-default);
+    margin: 2px 8px 8px;
+}
+
+.examTimeTip {
+    background-color: var(--td-warning-color-2);
+    color: var(--td-warning-color-8);
+    font-weight: bold;
+    text-align: center;
+    padding: 6px;
+}
+
+.examTimeMain {
+    grid-column: 2 / -1;
+    grid-auto-rows: max-content;
+}
+
+.examTimeMain .examTimeItem {
+    background-color: var(--td-bg-color-secondarycontainer);
+    grid-auto-rows: max-content;
+    line-height: 1.58;
+    padding: 12px 16px;
+}
+
+.examTimeMain .examTimeItem .examCourse {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    font-weight: 700;
+    font-size: var(--td-font-size-m);
+    margin-bottom: 5px;
+}
+
+.examTimeMain .examTimeItem .examInfo {
+    display: flex;
+    justify-content: space-between;
+}
+
+.examTimeMain .examTimeItem .examInfoDesc {
+    font-size: small;
+    color: var(--td-text-color-secondary);
+}
+
+.examTimeMain .examTimeItem .examInfo .examInfoRight {
+    width: 50px;
+    word-break: keep-all;
+    margin-left: 4px;
+}

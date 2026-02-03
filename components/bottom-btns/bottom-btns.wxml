@@ -1,0 +1,87 @@
+<view class="bottom-btns">
+    <view
+        class="btn-item span"
+        wx:if="{{ ifVacation }}"
+        bind:tap="onReportTap"
+    >
+        <image
+            class="btn-left"
+            mode="aspectFit"
+            src="/images/report.png"
+        />
+        <view class="btn-right">
+            <view class="btn-title">学期报告</view>
+            <view class="btn-desc">这里可以一键查询您本学期的考试成绩</view>
+        </view>
+    </view>
+
+    <view
+        class="btn-item span"
+        bind:tap="onCalendarTap"
+    >
+        <image
+            class="btn-left"
+            mode="aspectFit"
+            src="/images/calendar.png"
+        />
+        <view class="btn-right">
+            <view class="btn-title">导入到日历</view>
+            <view class="btn-desc">在手机日历里查看课表，带闹钟提醒服务</view>
+        </view>
+    </view>
+
+    <view
+        class="btn-item span"
+        bind:tap="displayFeedbackDialog"
+    >
+        <image
+            class="btn-left"
+            mode="aspectFit"
+            src="/images/feedback.png"
+        />
+        <view class="btn-right">
+            <view class="btn-title">反馈和建议</view>
+            <view class="btn-desc">遇到问题马上反馈！在意您的使用体验和建议</view>
+        </view>
+    </view>
+</view>
+
+<t-dialog
+    visible="{{ showFeedbackDialog }}"
+    title="反馈和建议"
+    content="若您对小江课表有啥建议或者有需解决的问题，可在此处反馈。"
+    confirm-btn="反馈"
+    cancel-btn="取消"
+    bind:confirm="confirmFeedback"
+    bind:cancel="displayFeedbackDialog"
+>
+    <view slot="content">
+        <view class="feedback-box">
+            <t-input
+                borderless
+                label="联系方式"
+                placeholder="非必填项"
+                value="{{ feedbackContact }}"
+                id="Contact"
+                class="feedback-input"
+                t-class-label="feedback-label"
+                bind:change="onInputChange"
+            />
+        </view>
+
+        <view class="feedback-box">
+            <t-textarea
+                class="feedback-input"
+                label="反馈内容"
+                value="{{ feedbackContent }}"
+                id="Content"
+                placeholder="恶语伤人三春寒，良言一句暖三冬"
+                disableDefaultPadding="{{ true }}"
+                show-confirm-bar="{{ false }}"
+                bind:change="onInputChange"
+            />
+        </view>
+    </view>
+</t-dialog>
+
+<t-message id="feedback-message" />

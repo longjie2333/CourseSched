@@ -1,0 +1,295 @@
+<navbar
+    title="{{ clas }}"
+    showVacationTag="{{ true }}"
+    ifSubPage="{{ true }}"
+    bind:onManualUpdateTap="onManualUpdateTap"
+/>
+
+<!--<view-->
+<!--    wx:if="{{ !show_semester_report }}"-->
+<!--    class="card"-->
+<!--&gt;-->
+<!--    <t-result-->
+<!--        icon="chevron-up-circle"-->
+<!--    >-->
+<!--        <view slot="title">请登录</view>-->
+<!--        <view slot="description">-->
+<!--            <view>点击上方班级标题文字</view>-->
+<!--            <view>登录后即可查看您的学期报告</view>-->
+<!--        </view>-->
+<!--    </t-result>-->
+<!--</view>-->
+
+<view
+    class="card"
+    wx:if="{{ show_semester_report_loading }}"
+>
+    <t-result
+        icon="error-circle"
+        title="{{ errorMessage }}"
+        wx:if="{{ ifLoadFail }}"
+    />
+
+    <block wx:else>
+        <t-progress
+            class="report-progress"
+            theme="circle"
+            status="active"
+            size="83"
+            stroke-width="8"
+            label="{{ false }}"
+            percentage="{{ currPercentage }}"
+        >
+            <view
+                slot="label"
+                class="report-progress-label"
+            >{{ currPercentage }}</view>
+        </t-progress>
+
+        <view class="report-progress-title">{{ errorMessage }}</view>
+    </block>
+</view>
+
+<view
+    class="report-box"
+    wx:else
+>
+    <view class="report-card report-welcome">
+        <view class="report-welcome-title">学期报告</view>
+        <view>
+            <t-icon
+                name="quote-filled"
+                size="24px"
+                class="report-welcome-icon"
+            />
+            <image
+                class="report-welcome-img"
+                src="/images/paper.png"
+                mode="aspectFit"
+            />
+            <view class="report-welcome-desc">你好，{{ reportData.info.name }}同学</view>
+            <view class="report-welcome-text">您已在江职院中熬过 {{ reportData.examScore.length }} 个学期啦！</view>
+        </view>
+    </view>
+
+    <view class="report-card-container">
+        <view class="report-card-head">
+            <view class="report-card-head-title">考试成绩</view>
+            <view class="report-card-head-desc">这个学期你考了这些科目</view>
+        </view>
+
+        <view
+            class="card"
+            wx:if="{{ reportData.examScore.length === 0 }}"
+        >
+            <t-result icon="empty">
+                <view
+                    slot="title"
+                    class="result-title"
+                >无成绩</view>
+                <view slot="description">
+                    <view>这学期还未开始考试捏</view>
+                </view>
+            </t-result>
+        </view>
+
+        <view
+            class="report-card"
+            style="background: none;padding: 0;"
+            wx:else
+        >
+            <view class="exam-score-box">
+                <view
+                    class="exam-score-item"
+                    wx:for="{{ reportData.examScore[reportData.examScore.length - 1] }}"
+                    wx:key="index"
+                >
+                    <view class="exam-score-name">{{ item.course_name }}</view>
+                    <view class="exam-score-statistic">
+                        <view>平时分</view>
+                        <view>{{ item.usual_score }}</view>
+                    </view>
+                    <view class="exam-score-statistic">
+                        <view>考试分</view>
+                        <view>{{ item.exam_score }}</view>
+                    </view>
+                    <view class="exam-score-statistic">
+                        <view>总评分</view>
+                        <view>{{ item.overall_score }}</view>
+                    </view>
+                </view>
+            </view>
+        </view>
+    </view>
+
+    <view class="report-card-container">
+        <view class="report-card-head">
+            <view class="report-card-head-title">课堂考勤</view>
+            <view class="report-card-head-desc">老天爷保佑没有记缺勤</view>
+        </view>
+
+        <view
+            class="card"
+            wx:if="{{ reportData.attendance.data.length === 0 }}"
+        >
+            <t-result icon="trophy">
+                <view slot="title" style="color: var(--td-warning-color);">全勤奖</view>
+                <view slot="description">
+                    <view>全勤非你莫属！</view>
+                    <view>你这学期没有逃课对吧？</view>
+                </view>
+            </t-result>
+        </view>
+
+        <view
+            class="report-card"
+            wx:else
+        >
+            <view class="attendance-title">哇哦，你这学期有被记考勤哦</view>
+
+            <view class="attendance-statistic-box">
+                <view class="attendance-statistic">
+                    <view class="attendance-statistic-title">迟到</view>
+                    <view class="attendance-statistic-content">
+                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.late }}</view>
+                        <view class="attendance-statistic-suffix">节</view>
+                    </view>
+                </view>
+                <view class="attendance-statistic">
+                    <view class="attendance-statistic-title">早退</view>
+                    <view class="attendance-statistic-content">
+                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.leave_early }}</view>
+                        <view class="attendance-statistic-suffix">次</view>
+                    </view>
+                </view>
+                <view class="attendance-statistic">
+                    <view class="attendance-statistic-title">请假</view>
+                    <view class="attendance-statistic-content">
+                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.leave }}</view>
+                        <view class="attendance-statistic-suffix">节</view>
+                    </view>
+                </view>
+                <view class="attendance-statistic">
+                    <view class="attendance-statistic-title">旷课</view>
+                    <view class="attendance-statistic-content">
+                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.absent }}</view>
+                        <view class="attendance-statistic-suffix">节</view>
+                    </view>
+                </view>
+                <view
+                    class="attendance-statistic"
+                    wx:if="{{ reportData.attendance.statistics.online === '0' }}"
+                >
+                    <view class="attendance-statistic-title">网上到课</view>
+                    <view class="attendance-statistic-content">
+                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.online }}</view>
+                        <view class="attendance-statistic-suffix">次</view>
+                    </view>
+                </view>
+                <view class="attendance-statistic">
+                    <view class="attendance-statistic-title">请公假</view>
+                    <view class="attendance-statistic-content">
+                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.official_leave }}</view>
+                        <view class="attendance-statistic-suffix">次</view>
+                    </view>
+                </view>
+            </view>
+
+            <t-divider class="divider" content="考勤详情" align="center"/>
+
+            <t-steps
+                readonly
+                theme="dot"
+                layout="vertical"
+                class="attendance-box"
+                current="{{ reportData.attendance.data.length }}"
+            >
+                <t-step-item
+                    class="attendance-item"
+                    title="{{ item.course_name }}"
+                    wx:for="{{ reportData.attendance.data }}"
+                    wx:key="index"
+                >
+                    <view slot="content">
+                        <view class="attendance-content">
+                            <t-tag wx:if="{{ item.late === '1' }}" variant="light" shape="round">迟到</t-tag>
+                            <t-tag wx:if="{{ item.leave_early === '1' }}" variant="light" shape="round">早退</t-tag>
+                            <t-tag wx:if="{{ item.leave === '1' }}" variant="light" shape="round">请假</t-tag>
+                            <t-tag wx:if="{{ item.absent === '1' }}" variant="light" shape="round">旷课</t-tag>
+                            <t-tag wx:if="{{ item.online === '1' }}" variant="light" shape="round">网上到课</t-tag>
+                            <t-tag wx:if="{{ item.official_leave === '1' }}" variant="light" shape="round">请公假</t-tag>
+                            <view>第 {{ item.weeks }} 周，周{{ weekTitle[item.week] }}，第 {{item.period}} 节课</view>
+                        </view>
+                    </view>
+                </t-step-item>
+            </t-steps>
+        </view>
+    </view>
+
+    <view class="report-card-container">
+        <view class="report-card-head">
+            <view class="report-card-head-title">请假情况</view>
+            <view class="report-card-head-desc">所以你这学期有请假吗？</view>
+        </view>
+
+        <view
+            class="card"
+            wx:if="{{ reportData.leaveHistory.length === 0 }}"
+        >
+            <t-result icon="heyhey">
+                <view
+                    slot="title"
+                    class="result-title"
+                >哇塞，泥太棒了</view>
+                <view slot="description">
+                    <view>这学期没请过一次假</view>
+                    <view>老铁，没病没伤没事走两步🚶‍♂️</view>
+                </view>
+            </t-result>
+        </view>
+
+        <view
+            class="report-card"
+            style="max-height: {{ !show_leave_history_more && reportData.leaveHistory.length > 3 ? '300px' : '20000px' }};"
+            wx:else
+        >
+            <view class="leave-history-title">这学期你一共请了<view>{{ reportData.leaveHistory.length }}</view>次假</view>
+
+            <t-steps
+                readonly
+                layout="vertical"
+                theme="dot"
+                current="{{ reportData.leaveHistory.length }}"
+                class="leave-history-box"
+            >
+                <t-step-item
+                    class="leave-history-item"
+                    title="{{ item.reason }}"
+                    wx:for="{{ reportData.leaveHistory }}"
+                    wx:key="index"
+                >
+                    <view slot="content">
+                        <view class="leave-history-content">
+                            <t-tag variant="light" shape="round">开始</t-tag>
+                            <view>{{ item.start }}（{{ item.start_weeks }}）</view>
+                        </view>
+                        <view class="leave-history-content">
+                            <t-tag variant="light" shape="round">结束</t-tag>
+                            <view>{{ item.end }}（{{ item.end_weeks }}）</view>
+                        </view>
+                    </view>
+                </t-step-item>
+            </t-steps>
+
+            <view
+                class="leave-history-more"
+                wx:if="{{ !show_leave_history_more && reportData.leaveHistory.length > 3 }}"
+                bind:tap="showLeaveHistory"
+            >
+                <view>查看更多</view>
+            </view>
+        </view>
+    </view>
+</view>
+
+<t-message id="t-message" />

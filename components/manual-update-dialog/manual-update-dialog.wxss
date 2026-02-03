@@ -1,0 +1,13 @@
+.mudDialog {
+    --td-input-label-min-width: max-content;
+}
+
+.mudDialog .mudFromInput {
+    background: var(--td-bg-color-page);
+    border-radius: 12rpx;
+    padding:18rpx 32rpx;
+}
+
+.mudDialog .mudFromBtn {
+    margin-left: 24rpx;
+}

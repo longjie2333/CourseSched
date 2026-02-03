@@ -1,0 +1,9 @@
+{
+    "component": true,
+    "styleIsolation": "apply-shared",
+    "usingComponents": {
+        "t-navbar": "tdesign-miniprogram/navbar/navbar",
+        "t-tag": "tdesign-miniprogram/tag/tag",
+        "t-message": "tdesign-miniprogram/message/message"
+    }
+}

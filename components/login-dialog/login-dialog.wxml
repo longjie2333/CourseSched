@@ -1,0 +1,49 @@
+<t-dialog
+    visible="{{ visible }}"
+    title="获取本班课表"
+    content="通过教务系统获取自己班的课表。填写的信息仅保存在自己微信缓存中！"
+    confirm-btn="{{ { content: ifLoggedIn ? '重新获取' : '获取', variant: 'base' } }}"
+    bind:confirm="onConfirm"
+>
+    <view slot="content">
+        <t-input
+            borderless
+            label="学号"
+            placeholder="请输入教务系统账号"
+            class="loginFromInput"
+            data-field="username"
+            value="{{ config.username }}"
+            bind:blur="onLoginInputEvent"
+            bind:enter="onLoginInputEvent"
+        />
+        <t-input
+            borderless
+            type="password"
+            label="密码"
+            placeholder="请输入教务系统密码"
+            class="loginFromInput"
+            data-field="password"
+            value="{{ config.password }}"
+            bind:blur="onLoginInputEvent"
+            bind:enter="onLoginInputEvent"
+        />
+    </view>
+    <view
+        slot="actions"
+        class="loginBtns"
+    >
+        <t-button
+            class="loginBtn"
+            theme="light"
+            bind:tap="displayLoginDialog"
+        >取消</t-button>
+        <t-button
+            class="loginBtn"
+            theme="light"
+            wx:if="{{ ifLoggedIn }}"
+            bind:tap="clearLogin"
+        >清除</t-button>
+    </view>
+</t-dialog>
+
+<t-message id="login-message" />

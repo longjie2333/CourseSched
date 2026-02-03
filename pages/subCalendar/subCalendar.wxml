@@ -1,0 +1,226 @@
+<navbar
+    title="导入到日历"
+    ifSubPage="{{ true }}"
+    ifNeedUpdateBtn="{{ false }}"
+/>
+
+<view class="title-box">
+    <view class="title-text">效果和说明</view>
+    <view class="title-desc">实机效果图</view>
+</view>
+
+<view class="card main-box">
+    <image
+        class="main-screenshot"
+        mode="widthFix"
+        src="/images/screenshot.png"
+    />
+    <view class="main-content">
+        <view>
+            <view class="main-content-point">应用适配：</view>
+            <view>以上为苹果系统测试效果，原则上只要日历支持导入 iCalendar 数据，那就可以使用这个链接来导入课表到日历中。</view>
+        </view>
+        <view>
+            <view class="main-content-point">提醒服务：</view>
+            <view>开启日历提醒后，在当天上午的第一节上课前会闹钟提醒，下午同样是第一节上课前闹钟提醒，若上午或下午没课则无提醒服务。</view>
+        </view>
+    </view>
+</view>
+
+<view class="title-box">
+    <view class="title-text">导入操作指南</view>
+    <view class="title-desc">以苹果手机自带的日历为例</view>
+</view>
+
+<view class="card step-box">
+    <t-steps
+        readonly
+        current='{{ 10 }}'
+        layout="vertical"
+    >
+        <t-step-item
+            title="获取订阅链接"
+            content="下方“设置”按钮可调整适合个人作息的提醒时间"
+            status="process"
+            t-class-extra="step-item"
+        >
+            <view
+                slot="extra"
+                class="form-box"
+            >
+                <view class="form-item">
+                    <t-button
+                        class="form-btn"
+                        bind:tap="displayAlarmPicker"
+                    >设置</t-button>
+                    <t-button
+                        class="form-btn"
+                        theme="primary"
+                        icon="link"
+                        bind:tap="copySubUrl"
+                    >复制链接</t-button>
+                </view>
+                <view
+                    class="form-item"
+                    wx:if="{{ ifCustom[0] }}"
+                >
+                    <t-input
+                        t-class="form-inp"
+                        type="number"
+                        label="上午"
+                        suffix="分钟前"
+                        id="tm"
+                        bind:change="onCustomChange"
+                    />
+                </view>
+                <view
+                    class="form-item"
+                    wx:if="{{ ifCustom[1] }}"
+                >
+                    <t-input
+                        t-class="form-inp"
+                        type="number"
+                        label="下午"
+                        suffix="分钟前"
+                        id="ta"
+                        bind:change="onCustomChange"
+                    />
+                </view>
+            </view>
+        </t-step-item>
+        <t-step-item
+            title="打开日历APP，点击底部的“日历”"
+            status="process"
+            t-class-extra="step-item"
+        >
+            <view slot="extra">
+                <image
+                    class="step-schematic"
+                    mode="widthFix"
+                    src="/images/steps/1.png"
+                />
+            </view>
+        </t-step-item>
+        <t-step-item
+            title="点击弹出页面的底部最左边的“添加日历”"
+            status="process"
+            t-class-extra="step-item"
+        >
+            <view slot="extra">
+                <image
+                    class="step-schematic"
+                    mode="widthFix"
+                    src="/images/steps/2.png"
+                />
+            </view>
+        </t-step-item>
+        <t-step-item
+            title="选择第二项“添加订阅日历”"
+            status="process"
+            t-class-extra="step-item"
+        >
+            <view slot="extra">
+                <image
+                    class="step-schematic"
+                    mode="widthFix"
+                    src="/images/steps/3.png"
+                />
+            </view>
+        </t-step-item>
+        <t-step-item
+            title="粘贴刚才复制的订阅链接，然后“订阅”"
+            status="process"
+            t-class-extra="step-item"
+        >
+            <view slot="extra">
+                <image
+                    class="step-schematic"
+                    mode="widthFix"
+                    src="/images/steps/4.png"
+                />
+            </view>
+        </t-step-item>
+        <t-step-item
+            title="滑动到页面底部，点击“订阅详细信息”"
+            content="这一步和下面的一步是为了保留提醒服务，而不被移除"
+            status="process"
+            t-class-extra="step-item"
+        >
+            <view slot="extra">
+                <image
+                    class="step-schematic"
+                    mode="widthFix"
+                    src="/images/steps/5.png"
+                />
+            </view>
+        </t-step-item>
+        <t-step-item
+            title="“移除提醒”默认是勾选状态，手动取消勾选"
+            content="取消勾选后如图所示，即为保留提醒服务"
+            status="process"
+            t-class-extra="step-item"
+        >
+            <view slot="extra">
+                <image
+                    class="step-schematic"
+                    mode="widthFix"
+                    src="/images/steps/6.png"
+                />
+            </view>
+        </t-step-item>
+        <t-step-item
+            title="最后，点击上面的“添加”即可"
+            status="process"
+            t-class-extra="step-item"
+        >
+            <view slot="extra">
+                <image
+                    class="step-schematic"
+                    mode="widthFix"
+                    src="/images/steps/7.png"
+                />
+            </view>
+        </t-step-item>
+        <t-step-item
+            title="导入完成！"
+            content="至此，您已将课表导入到日历当中。"
+            status="process"
+            t-class-extra="step-item"
+        />
+        <t-step-item
+            title="取消提醒服务（若您不需要）"
+            content="在上面第二步进去后，找到并点进课表日历，取消勾选如下图的设置即可"
+            status="error"
+            t-class-extra="step-item"
+        >
+            <view slot="extra">
+                <image
+                    class="step-schematic"
+                    mode="widthFix"
+                    src="/images/steps/8.png"
+                />
+            </view>
+        </t-step-item>
+    </t-steps>
+</view>
+
+<t-picker
+    visible="{{ pickerVisible }}"
+    value="{{ alarmVal }}"
+    defaultValue="{{ [ 30 ] }}"
+    title="设置提醒时间"
+    cancelBtn="取消 "
+    confirmBtn="确定"
+    usingCustomNavbar
+    bind:pick="onAlarmChange"
+    bind:close="displayAlarmPicker"
+>
+    <view
+        slot="content"
+        style="text-align: center;font-size: var(--td-font-size-base);margin-bottom: 10px"
+    >左列为上午提醒时间，右列为下午提醒时间</view>
+    <t-picker-item options="{{ alarmOpts }}"></t-picker-item>
+    <t-picker-item options="{{ alarmOpts }}"></t-picker-item>
+</t-picker>
+
+<t-message id="t-message" />

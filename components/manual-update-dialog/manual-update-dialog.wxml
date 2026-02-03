@@ -1,0 +1,27 @@
+<t-dialog
+    class="mudDialog"
+    content="小程序会自动更新课表，您也可点击下方“更新”按钮手动更新。"
+    visible="{{ visible }}"
+    actions="{{ dialogActions }}"
+    bind:action="onAction"
+>
+    <view slot="content" style="display: flex;margin-top: 40rpx;">
+        <t-input
+            borderless
+            class="mudFromInput"
+            type="number"
+            maxlength="{{ 2 }}"
+            label="每"
+            suffix="天更新一次"
+            align="center"
+            value="{{ updateIntervalTime }}"
+            bind:change="onUpdateIntervalChange"
+        />
+        <t-button
+            class="mudFromBtn"
+            bind:tap="saveUpdateInterval"
+        >保存</t-button>
+    </view>
+</t-dialog>
+
+<t-message id="manual-update-message" />

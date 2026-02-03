@@ -1,0 +1,65 @@
+<t-navbar>
+    <view
+        slot="left"
+        class="navbar-toolbar"
+    >
+        <t-tag
+            size="large"
+            variant="light"
+            icon="{{ { name: 'chevron-left', size: 20 } }}"
+            class="navbar-tool"
+            style="--td-tag-default-light-color: transparent;--td-tag-large-padding: 5px;"
+            wx:if="{{ ifSubPage }}"
+            bind:tap="onBackTap"
+        />
+
+        <block wx:else>
+            <t-tag
+                size="large"
+                variant="light"
+                icon="ended"
+                class="navbar-tool"
+                wx:if="{{ showVacationTag }}"
+                bind:tap="onVacationTagTap"
+            >放假啦</t-tag>
+
+            <t-tag
+                size="large"
+                variant="light"
+                icon="calendar-1"
+                class="navbar-tool"
+                wx:else
+                bind:tap="onWeeksChange"
+            >
+                <block wx:if="{{ ifWeeksChanging }}">选择中</block>
+                <block wx:else>第{{ currentWeeks }}周</block>
+            </t-tag>
+
+            <t-tag
+                size="large"
+                variant="light"
+                icon="rollback"
+                class="navbar-tool"
+                wx:if="{{ ifWeeksChanging }}"
+                bind:tap="onRollbackTap"
+            />
+        </block>
+
+        <t-tag
+            size="large"
+            variant="light"
+            icon="refresh"
+            class="navbar-tool"
+            wx:if="{{ !ifWeeksChanging && ifNeedUpdateBtn }}"
+            bind:tap="onManualUpdateTap"
+        />
+    </view>
+
+    <view
+        slot="title"
+        style="font-size: small;"
+        bind:tap="onTitleTap"
+    >{{ title || '(点击获取课表)' }}</view>
+</t-navbar>
+
+<t-message id="navbar-message" />
