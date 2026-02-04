@@ -1,5 +1,5 @@
 <navbar
-    title="{{ clas }}"
+    title="{{ reportData.info.class || '你哪个班的？' }}"
     showVacationTag="{{ true }}"
     ifSubPage="{{ true }}"
     bind:onManualUpdateTap="onManualUpdateTap"

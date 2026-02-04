@@ -1,3 +1,4 @@
+import request from '../utils/request'
 import { STORE_KEY } from '../constants/index'
 
 export const authService = {
@@ -29,8 +30,26 @@ export const authService = {
      * 清除所有登录信息和缓存
      */
     clearAuth() {
-        wx.removeStorageSync(STORE_KEY.CONFIG)
-        wx.removeStorageSync(STORE_KEY.CACHE_DATA)
-        wx.removeStorageSync(STORE_KEY.UPDATE_INTERVAL_TIME)
+        wx.clearStorageSync()
+    },
+
+    /**
+     * 检查登录信息是否有效
+     */
+    async checkIsValid(context) {
+        try {
+            await request('check', context, {
+                skipToast: true
+            })
+        } catch (err) {
+            if (err === '资源不存在') return {
+                isValid: true
+            }
+
+            return {
+                isValid: false,
+                msg: err
+            }
+        }
     }
 }

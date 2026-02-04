@@ -34,10 +34,26 @@ Page({
             value: -1
         }],
         ifCustom: [false, false],
+        ifChecking: true,
+        isLoggedIn: false,
+        show_login_dialog: false
+    },
+    async onLoad(query) {
+        const { isValid } = await authService.checkIsValid(this)
+
+        this.setData({
+            isLoggedIn: isValid,
+            ifChecking: false,
+        })
     },
     displayAlarmPicker() {
         this.setData({
             pickerVisible: !this.data.pickerVisible,
+        })
+    },
+    displayLoginDialog() {
+        this.setData({
+            show_login_dialog: true
         })
     },
     onAlarmChange(e) {
@@ -55,6 +71,21 @@ Page({
         this.setData({
             [`alarmCustomVal.${id}`]: value
         })
+    },
+    async onLoggingIn(e) {
+        const { done } = e.detail
+
+        const { isValid, msg } = await authService.checkIsValid(this)
+
+        if (isValid) {
+            this.setData({
+                isLoggedIn: true
+            })
+        } else {
+            ErrorMessage(this, '#t-message', msg)
+        }
+
+        done()
     },
     copySubUrl() {
         const { alarmVal, alarmCustomVal } = this.data
@@ -99,5 +130,12 @@ Page({
                 InfoMessage(this, '#t-message', `复制成功，上午将会${tmC}分钟前提醒，下午为${taC}分钟前`)
             }
         })
-    }
+    },
+    onShareAppMessage() {
+        return {
+            title: '将课表导入日历',
+            path: '/pages/subCalendar/subCalendar',
+            imageUrl: '../../images/coverSubCal.png'
+        }
+    },
 })

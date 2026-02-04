@@ -1,7 +1,7 @@
 <t-dialog
     visible="{{ visible }}"
-    title="获取本班课表"
-    content="通过教务系统获取自己班的课表。填写的信息仅保存在自己微信缓存中！"
+    title="{{ title }}"
+    content="{{ content }}"
     confirm-btn="{{ { content: ifLoggedIn ? '重新获取' : '获取', variant: 'base' } }}"
     bind:confirm="onConfirm"
 >

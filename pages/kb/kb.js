@@ -7,6 +7,7 @@ import { buildCourseMap, formatCourseData, genForRenderData } from '../../utils/
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
 
 let isExamTimeLoading = false
+let dontNavToPage = false
 
 Page({
     data: {
@@ -72,8 +73,11 @@ Page({
                 'cacheData.startingDate': startingDate
             })
 
+            dontNavToPage = true
             return this.displayLoginDialog()
         }
+
+        dontNavToPage = false
 
         const { clas, detail } = data
 
@@ -295,11 +299,23 @@ Page({
         }
     },
     navigateToReport() {
-        if (authService.isLoggedIn() && this.data.isVacation) {
+        if (dontNavToPage) return
+
+        if (!authService.isLoggedIn()) {
+            InfoMessage(this, '#t-message', '请先填写学号和密码，以便查看学期报告')
+            return this.displayLoginDialog()
+        }
+
+        if (this.data.isVacation) {
             wx.navigateTo({
-                url: '/pages/report/report?clas=' + this.data.cacheData.clas,
+                url: '/pages/report/report',
             })
         }
+    },
+    navigateToSubCalendar() {
+        wx.navigateTo({
+            url: '/pages/subCalendar/subCalendar',
+        })
     },
     onShareAppMessage() {
         return {

@@ -7,7 +7,8 @@
         "t-input": "tdesign-miniprogram/input/input",
         "t-button": "tdesign-miniprogram/button/button",
         "t-message": "tdesign-miniprogram/message/message",
-        "navbar": "/components/navbar/navbar"
+        "navbar": "/components/navbar/navbar",
+        "login-dialog": "/components/login-dialog/login-dialog"
     },
     "navigationStyle": "custom"
 }

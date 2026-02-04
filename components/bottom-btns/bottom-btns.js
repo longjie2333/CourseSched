@@ -22,9 +22,7 @@ Component({
             this.triggerEvent('onReportTap')
         },
         onCalendarTap() {
-            wx.navigateTo({
-                url: '/pages/subCalendar/subCalendar',
-            })
+            this.triggerEvent('onCalendarTap')
         },
         async confirmFeedback() {
             const { feedbackContact, feedbackContent } = this.data

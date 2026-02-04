@@ -8,6 +8,7 @@ DS_Store
 .vscode/
 
 env.js
+project.private.config.json
 
 # 保留二次修改的第三方组件
 miniprogram_npm/tdesign-miniprogram/*

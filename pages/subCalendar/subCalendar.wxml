@@ -57,8 +57,17 @@
                         class="form-btn"
                         theme="primary"
                         icon="link"
+                        wx:if="{{ isLoggedIn }}"
                         bind:tap="copySubUrl"
                     >复制链接</t-button>
+                    <t-button
+                        class="form-btn"
+                        theme="primary"
+                        icon="link"
+                        disabled="{{ ifChecking }}"
+                        wx:else
+                        bind:tap="displayLoginDialog"
+                    >获取链接</t-button>
                 </view>
                 <view
                     class="form-item"
@@ -222,5 +231,12 @@
     <t-picker-item options="{{ alarmOpts }}"></t-picker-item>
     <t-picker-item options="{{ alarmOpts }}"></t-picker-item>
 </t-picker>
+
+<login-dialog
+    visible="{{ show_login_dialog }}"
+    title="获取订阅链接"
+    content="需要您的学号和密码来登录教务系统获取课表数据。所填写的信息仅保存在您的微信缓存中！"
+    bind:onLoggingIn="onLoggingIn"
+/>
 
 <t-message id="t-message" />

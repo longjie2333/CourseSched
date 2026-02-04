@@ -6,6 +6,14 @@ Component({
         visible: {
             type: Boolean,
             value: false
+        },
+        title: {
+            type: String,
+            value: '获取本班课表'
+        },
+        content: {
+            type: String,
+            value: '通过教务系统获取自己班的课表。填写的信息仅保存在您的微信缓存中！'
         }
     },
     data: {
@@ -17,6 +25,14 @@ Component({
     },
     lifetimes: {
         attached() {
+            this.setData({
+                ifLoggedIn: authService.isLoggedIn(),
+                config: authService.getConfig()
+            })
+        }
+    },
+    pageLifetimes: {
+        show() {
             this.setData({
                 ifLoggedIn: authService.isLoggedIn(),
                 config: authService.getConfig()

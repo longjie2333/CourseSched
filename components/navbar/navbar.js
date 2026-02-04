@@ -49,7 +49,21 @@ Component({
             this.triggerEvent('onManualUpdateTap')
         },
         onBackTap() {
-            wx.navigateBack()
+            wx.navigateBack({
+                fail(err) {
+                    const { errMsg } = err
+
+                    if (!errMsg) {
+                        return
+                    }
+
+                    if (errMsg.indexOf('at first page')) {
+                        wx.redirectTo({
+                            url: '/pages/kb/kb',
+                        })
+                    }
+                }
+            })
         }
     }
 })

@@ -64,6 +64,7 @@
 <bottom-btns
     ifVacation="{{ isVacation }}"
     bind:onReportTap="navigateToReport"
+    bind:onCalendarTap="navigateToSubCalendar"
 />
 
 <login-dialog

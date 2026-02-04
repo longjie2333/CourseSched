@@ -7,7 +7,6 @@ let antishake = false
 
 Page({
     data: {
-        clas: '',
         reportData: {
             info: {},
             examScore: [],
@@ -31,10 +30,6 @@ Page({
         show_leave_history_more: false,
     },
     async onLoad(query) {
-        const { clas } = query
-
-        this.setData({ clas })
-
         await this.getSemesterReport()
     },
     onManualUpdateTap() {
