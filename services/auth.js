@@ -38,7 +38,7 @@ export const authService = {
      */
     async checkIsValid(context) {
         try {
-            await request('check', context, {
+            await request('check?cache', context, {
                 skipToast: true
             })
         } catch (err) {

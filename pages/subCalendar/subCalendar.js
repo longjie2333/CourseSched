@@ -93,7 +93,7 @@ Page({
         const { username, password } = authService.getConfig()
         const wordArr = CryptoJS.enc.Utf8.parse(`${username}:${password}`)
         const en = CryptoJS.enc.Base64.stringify(wordArr)
-        const subUrl = [ `${env.icsUrl}course/subscribe`, `?en=${en}` ]
+        const subUrl = [ `${env.icsUrl}course/subscribe`, `?en=${en}`, '&cache' ]
 
         if (tm !== -1 && tm === ta) {
             subUrl.push(`&t=-${tm}`)
