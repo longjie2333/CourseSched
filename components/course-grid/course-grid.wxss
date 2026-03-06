@@ -23,6 +23,7 @@
     justify-content: center;
     padding: 1px;
     word-break: break-word;
+    overflow: hidden;
     border-radius: var(--td-radius-default);
 }
 
@@ -46,5 +47,7 @@
 }
 
 .emptyCourse {
+    color: var(--td-text-color-primary);
+    white-space: pre-wrap;
     background-color: var(--td-bg-color-secondarycontainer);
 }

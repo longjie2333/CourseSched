@@ -40,9 +40,11 @@
             <block wx:elif="{{ courseData[weeks][week][time] !== 'ignore'}}">
                 <!-- 中间，格子，课程 -->
                 <view
+                    id="label.{{ courseData[weeks][0][week] }}.{{ time }}"
                     class="classCell emptyCourse"
                     wx:if="{{ courseData[weeks][week][time] === 'free' }}"
-                />
+                    bind:tap="labeling"
+                >{{ labelData["label." + courseData[weeks][0][week] + "." + time].value }}</view>
 
                 <view
                     id="course.{{ weeks }}.{{week}}.{{ time }}"

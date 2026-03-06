@@ -19,5 +19,6 @@ export const STORE_KEY = {
     FEEDBACK_INTERVAL_TIME: 'feedbackInterval',
     UPDATE_INTERVAL_TIME: 'updateInterval',
     CACHE_DATA: 'cache',
+    LABEL_DATA: 'label',
     CONFIG: 'config',
 }

@@ -1,5 +1,7 @@
 import { TIME_TITLES, WEEK_TITLES } from '../../constants/index'
 
+let lastClick = 0
+
 Component({
     properties: {
         weeks: {
@@ -13,6 +15,10 @@ Component({
         courseData: {
             type: Array,
             value: []
+        },
+        labelData: {
+            type: Object,
+            value: {}
         }
     },
     data: {
@@ -32,6 +38,22 @@ Component({
 
             this.triggerEvent('onCourseTap', {
                 type, data
+            })
+        },
+        labeling(e) {
+            const { id } = e.currentTarget
+            const now = Date.now()
+            const doubleClickDelay = 300
+
+            if (now - lastClick > doubleClickDelay) {
+                lastClick = now
+                return
+            }
+
+            lastClick = 0
+
+            this.triggerEvent('labeling', {
+                labelId: id
             })
         }
     }

@@ -45,8 +45,10 @@
             weeks="{{ weeks }}"
             ifToday="{{ ifToday }}"
             courseData="{{ renderData }}"
+            labelData="{{ labelData }}"
             wx:if="{{ weeks < 18 }}"
             bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
         />
 
         <exam-time-grid
@@ -80,6 +82,13 @@
 <detail-popup
     visible="{{ show_detail_popup }}"
     content="{{ detailContent }}"
+/>
+
+<label-popup
+    visible="{{ show_label_popup }}"
+    labelId="{{ labelId }}"
+    startingDate="{{ cacheData.startingDate }}"
+    bind:onUpdate="onLabelUpdate"
 />
 
 <t-message id="t-message" />

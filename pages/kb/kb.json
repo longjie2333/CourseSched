@@ -10,7 +10,8 @@
         "detail-popup": "/components/detail-popup/detail-popup",
         "login-dialog": "/components/login-dialog/login-dialog",
         "manual-update-dialog": "/components/manual-update-dialog/manual-update-dialog",
-        "bottom-btns": "/components/bottom-btns/bottom-btns"
+        "bottom-btns": "/components/bottom-btns/bottom-btns",
+        "label-popup": "/components/label-popup/label-popup"
     },
     "navigationStyle": "custom"
 }

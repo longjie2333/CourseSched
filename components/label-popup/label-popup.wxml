@@ -1,0 +1,30 @@
+<t-popup
+    placement="bottom"
+    visible="{{ visible }}"
+    bind:visible-change="hiddenPopup"
+>
+    <view class="popup-block">
+        <view class="popup-header">
+            <view class="popup-title">编辑标签</view>
+        </view>
+        <view class="popup-content">
+            <t-textarea
+                class="from-input"
+                placeholder="请输入标签内容"
+                value="{{ defaultValue }}"
+                disableDefaultPadding="{{ true }}"
+                showConfirmBar="{{ false }}"
+                autosize="{{ true }}"
+                bind:change="onChange"
+            />
+            <t-button
+                class="form-btn"
+                theme="danger"
+                variant="text"
+                shape="square"
+                icon="delete"
+                bind:tap="onClear"
+            />
+        </view>
+    </view>
+</t-popup>

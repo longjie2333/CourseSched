@@ -18,7 +18,9 @@ Page({
         },
         renderData: [],
         examTimeData: [],
+        labelData: {},
         detailContent: {},
+        labelId: '',
         weekTitles: WEEK_TITLES,
         ifToday: '',
         ifThisWeek: 1,
@@ -31,6 +33,7 @@ Page({
         show_manual_update_dialog: false,
         show_tabs_tag: false,
         show_detail_popup: false,
+        show_label_popup: false,
         show_exam_time_loading: true,
         show_exam_time_loadFail: false,
         navbarStyle: ''
@@ -48,6 +51,7 @@ Page({
         })
 
         await this.loadData()
+        await this.loadLabelData()
         await this.initStateVar()
         await this.handleData()
 
@@ -84,6 +88,19 @@ Page({
 
         this.setData({
             cacheData: { clas, detail, startingDate },
+        })
+    },
+    async loadLabelData() {
+        const { startingDate } = this.data.cacheData
+
+        await new Promise(resolve => {
+            const labelData = wx.getStorageSync(STORE_KEY.LABEL_DATA)
+
+            this.setData({
+                labelData: labelData[startingDate] || {}
+            }, () => {
+                resolve()
+            })
         })
     },
     async initStateVar() {
@@ -151,6 +168,14 @@ Page({
                 _type: type,
                 ...data
             }
+        })
+    },
+    displayLabelPopup(e) {
+        const { labelId } = e.detail
+
+        this.setData({
+            show_label_popup: true,
+            labelId
         })
     },
     async onLoggingIn(e) {
@@ -225,6 +250,13 @@ Page({
             ifWeeksChanging: ifThisWeeks !== value,
             show_tabs_tag: ifThisWeeks !== value,
         })
+    },
+    async onLabelUpdate(e) {
+        const { hasUpdated } = e.detail
+
+        if (hasUpdated) {
+            await this.loadLabelData()
+        }
     },
     calcNavbarStyle() {
         if (!wx.getMenuButtonBoundingClientRect || !systemInfo) {
