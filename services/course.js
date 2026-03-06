@@ -91,7 +91,12 @@ export const courseService = {
                     return null
                 }
 
-                if (updatedData.sha256 === cacheData.sha256) {
+                const { sha256 } = updatedData
+
+                if (
+                    (startingDate === cacheData.startingDate) ||
+                    (sha256 === cacheData.sha256)
+                ) {
                     nothingCallback && nothingCallback(cacheData)
                 } else {
                     onUpdateCallback && onUpdateCallback(updatedData)

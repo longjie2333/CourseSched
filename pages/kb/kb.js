@@ -57,6 +57,7 @@ Page({
         const that = this
         const data = await courseService.getCache(this, {
             async onUpdateCallback(updatedData) {
+                wx.navigateBack()
                 await that.handleData(updatedData)
                 SuccessMessage(that, '#t-message', '课表已更新')
             }
@@ -301,16 +302,16 @@ Page({
     navigateToReport() {
         if (dontNavToPage) return
 
+        if (!this.data.isVacation) return
+
         if (!authService.isLoggedIn()) {
             InfoMessage(this, '#t-message', '请先填写学号和密码，以便查看学期报告')
             return this.displayLoginDialog()
         }
 
-        if (this.data.isVacation) {
-            wx.navigateTo({
-                url: '/pages/report/report',
-            })
-        }
+        wx.navigateTo({
+            url: '/pages/report/report',
+        })
     },
     navigateToSubCalendar() {
         wx.navigateTo({

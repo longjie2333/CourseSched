@@ -39,7 +39,8 @@ Component({
 
             if (type === 'action' && index === 0) {
                 wx.showLoading({
-                    title: '更新中'
+                    title: '更新中',
+                    mask: true
                 })
 
                 this.triggerEvent('onManualUpdate', {
