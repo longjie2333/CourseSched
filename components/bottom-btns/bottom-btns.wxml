@@ -49,7 +49,7 @@
 <t-dialog
     visible="{{ showFeedbackDialog }}"
     title="反馈和建议"
-    content="若您对小江课表有啥建议或者有需解决的问题，可在此处反馈。"
+    content="遇到问题或者有建议？皆可反馈！"
     confirm-btn="反馈"
     cancel-btn="取消"
     bind:confirm="confirmFeedback"
@@ -71,6 +71,7 @@
 
         <view class="feedback-box">
             <t-textarea
+                style="height: 124px"
                 class="feedback-input"
                 label="反馈内容"
                 value="{{ feedbackContent }}"
@@ -79,6 +80,18 @@
                 disableDefaultPadding="{{ true }}"
                 show-confirm-bar="{{ false }}"
                 bind:change="onInputChange"
+            />
+        </view>
+
+        <view class="feedback-box">
+            <view class="feedback-label feedback-upload-label">上传截图</view>
+            <t-upload
+                media-type="{{ ['image'] }}"
+                files="{{ feedbackFiles }}"
+                gridConfig="{{gridConfig}}"
+                max="{{ 3 }}"
+                bind:success="handleUploadSuccess"
+                bind:remove="handleUploadRemove"
             />
         </view>
     </view>

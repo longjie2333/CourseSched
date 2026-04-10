@@ -54,13 +54,20 @@
 
 .feedback-box:first-child {
     margin-top: var(--td-spacer-4);
-    margin-bottom: var(--td-spacer-2);
     display: flex;
     align-items: center;
 }
 
+.feedback-box + .feedback-box {
+    margin-top: var(--td-spacer-2);
+}
+
 .feedback-label {
     --td-font-size-m: var(--td-font-size-base);
+}
+
+.feedback-upload-label {
+    padding: 0 8px var(--td-spacer, 16rpx);
 }
 
 .feedback-input {
