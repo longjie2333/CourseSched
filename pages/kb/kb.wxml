@@ -91,4 +91,6 @@
     bind:onUpdate="onLabelUpdate"
 />
 
+<notice />
+
 <t-message id="t-message" />

@@ -11,7 +11,8 @@
         "login-dialog": "/components/login-dialog/login-dialog",
         "manual-update-dialog": "/components/manual-update-dialog/manual-update-dialog",
         "bottom-btns": "/components/bottom-btns/bottom-btns",
-        "label-popup": "/components/label-popup/label-popup"
+        "label-popup": "/components/label-popup/label-popup",
+        "notice": "/components/notice/notice"
     },
     "navigationStyle": "custom"
 }
