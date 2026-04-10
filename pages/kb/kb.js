@@ -132,7 +132,7 @@ Page({
     },
     async handleData(data = null) {
         const { cacheData } = this.data
-        const { startingDate, detail } = data || cacheData
+        const { startingDate, detail, clas } = data || cacheData
 
         await new Promise(async (resolve) => {
             if (detail.length === 0) {
@@ -143,7 +143,15 @@ Page({
             const courseMap = buildCourseMap(formatted)
             const renderData = genForRenderData(courseMap, startingDate)
 
-            this.setData({ renderData }, () => {
+            this.setData({
+                renderData,
+                cacheData: {
+                    clas: clas,
+                    detail: detail,
+                    startingDate: startingDate,
+                }
+            }, () => {
+                this.initStateVar()
                 wx.hideLoading()
                 resolve()
             })
