@@ -69,6 +69,11 @@ Component({
                     }
 
                     try {
+                        wx.showLoading({
+                            title: '反馈中',
+                            mask: true,
+                        })
+
                         await request('feedback', this, {
                             body: {
                                 code: res.code,
@@ -80,6 +85,8 @@ Component({
                         })
 
                         this.displayFeedbackDialog()
+
+                        wx.hideLoading()
 
                         SuccessMessage(this, '#feedback-message', '感谢您的反馈')
 
