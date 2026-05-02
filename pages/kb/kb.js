@@ -108,16 +108,17 @@ Page({
         await new Promise(resolve => {
             const { startingDate } = this.data.cacheData
             const ifThisWeeks = getThisWeeks(startingDate)
-            const stateVar = {
-                ifThisWeeks,
-                isVacation: Boolean(ifThisWeeks >= VACATION_FROM || ifThisWeeks < VACATION_TO),
-            }
+            const isVacation = Boolean(ifThisWeeks >= VACATION_FROM || ifThisWeeks < VACATION_TO)
+            const stateVar = { ifThisWeeks, isVacation }
 
             this.setData({
                 ...stateVar, ...this.changeWeeksIndex(ifThisWeeks),
             }, () => {
                 resolve()
-                this.navigateToReport()
+
+                if (isVacation) {
+                    this.navigateToReport()
+                }
             })
         })
     },
@@ -358,15 +359,13 @@ Page({
     navigateToReport() {
         if (dontNavToPage) return
 
-        if (!this.data.isVacation) return
-
         if (!authService.isLoggedIn()) {
             InfoMessage(this, '#t-message', '请先填写学号和密码，以便查看学期报告')
             return this.displayLoginDialog()
         }
 
         wx.navigateTo({
-            url: '/pages/report/report',
+            url: '/pages/report/report?isVacation=' + this.data.isVacation,
         })
     },
     navigateToSubCalendar() {

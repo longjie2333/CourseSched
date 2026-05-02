@@ -1,5 +1,6 @@
 import { reportService } from '../../services/report'
 import { calcPercentage } from '../../utils/index'
+import { WEEK_TITLES } from '../../constants/index'
 
 let currProgress = 0
 let animationTimer = null
@@ -23,13 +24,22 @@ Page({
             },
             leaveHistory: []
         },
+        weekTitles: WEEK_TITLES,
         ifLoadFail: false,
+        isVacation: false,
         errorMessage: '生成报告中',
         currPercentage: 0,
+        currSemester: 0,
         show_semester_report_loading: true,
         show_leave_history_more: false,
     },
     async onLoad(query) {
+        const { isVacation } = query
+
+        this.setData({
+            isVacation: isVacation.toLowerCase() === 'true',
+        })
+
         await this.getSemesterReport()
     },
     onManualUpdateTap() {
@@ -40,7 +50,7 @@ Page({
         })
     },
     async getSemesterReport() {
-        const { errorMessage } = this.data
+        const { errorMessage, isVacation } = this.data
 
         if (antishake) {
             return
@@ -72,9 +82,17 @@ Page({
                 },
                 doneCallback: (result) => {
                     this.inProgress(() => {
+                        if (!isVacation) {
+                            result.examScore = [
+                                ...result.examScore,
+                                undefined
+                            ]
+                        }
+
                         this.setData({
                             reportData: result,
                             currPercentage: 0,
+                            currSemester: result.examScore.length - 1,
                             show_semester_report_loading: false,
                         })
                     })
@@ -139,6 +157,13 @@ Page({
                 callback && callback()
             }
         }, 33)
+    },
+    onChangeSemester(e) {
+        const { index } = e.target.dataset
+
+        this.setData({
+            currSemester: index
+        })
     },
     showLeaveHistory() {
         this.setData({

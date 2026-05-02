@@ -1,7 +1,6 @@
 <view class="bottom-btns">
     <view
         class="btn-item span"
-        wx:if="{{ ifVacation }}"
         bind:tap="onReportTap"
     >
         <image

@@ -74,13 +74,27 @@
 
     <view class="report-card-container">
         <view class="report-card-head">
-            <view class="report-card-head-title">考试成绩</view>
+            <view class="report-card-head-title">
+                考试成绩
+                <view class="exam-score-semester-bar">
+                    <t-tag
+                        size="large"
+                        variant="light"
+                        class="exam-score-semester {{ currSemester === semester ? 'exam-score-activate' : '' }}"
+                        data-index="{{ semester }}"
+                        wx:for="{{ reportData.examScore }}"
+                        wx:key="index"
+                        wx:for-index="semester"
+                        bind:tap="onChangeSemester"
+                    >{{ semester + 1 }}</t-tag>
+                </view>
+            </view>
             <view class="report-card-head-desc">这个学期你考了这些科目</view>
         </view>
 
         <view
             class="card"
-            wx:if="{{ reportData.examScore.length === 0 }}"
+            wx:if="{{ reportData.examScore.length === 0 || !reportData.examScore[currSemester] }}"
         >
             <t-result icon="empty">
                 <view
@@ -95,13 +109,13 @@
 
         <view
             class="report-card"
-            style="background: none;padding: 0;"
+            style="background: none;padding: 0;overflow-x: auto;"
             wx:else
         >
             <view class="exam-score-box">
                 <view
                     class="exam-score-item"
-                    wx:for="{{ reportData.examScore[reportData.examScore.length - 1] }}"
+                    wx:for="{{ reportData.examScore[currSemester] }}"
                     wx:key="index"
                 >
                     <view class="exam-score-name">{{ item.course_name }}</view>
@@ -218,7 +232,7 @@
                             <t-tag wx:if="{{ item.absent === '1' }}" variant="light" shape="round">旷课</t-tag>
                             <t-tag wx:if="{{ item.online === '1' }}" variant="light" shape="round">网上到课</t-tag>
                             <t-tag wx:if="{{ item.official_leave === '1' }}" variant="light" shape="round">请公假</t-tag>
-                            <view>第 {{ item.weeks }} 周，周{{ weekTitle[item.week] }}，第 {{item.period}} 节课</view>
+                            <view>第 {{ item.weeks }} 周，周{{ weekTitles[item.week] }}，第 {{item.period}} 节课</view>
                         </view>
                     </view>
                 </t-step-item>

@@ -80,10 +80,33 @@
     font-weight: 700;
     line-height: 36px;
     margin-top: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .report-card-head .report-card-head-desc {
     color: var(--td-text-color-secondary);
+}
+
+.exam-score-semester-bar {
+    display: flex;
+    gap: 5px;
+}
+
+.exam-score-activate {
+    font-weight: bold!important;
+    color: var(--td-primary-color-7)!important;
+    background-color: var(--td-primary-color-1)!important;
+}
+
+.exam-score-semester {
+    aspect-ratio: 1 / 1;
+}
+
+.exam-score-semester .t-tag__text {
+    width: -webkit-fill-available;
+    text-align: center;
 }
 
 .exam-score-box {
