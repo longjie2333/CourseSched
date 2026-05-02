@@ -21,5 +21,6 @@ export const STORE_KEY = {
     UPDATE_INTERVAL_TIME: 'updateInterval',
     CACHE_DATA: 'cache',
     LABEL_DATA: 'label',
+    ERROR_LOGS: 'errorLogs',
     CONFIG: 'config',
 }

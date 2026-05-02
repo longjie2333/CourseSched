@@ -1,4 +1,5 @@
 import { ErrorMessage } from './index'
+import { collectErrorLog } from './error-logger'
 import env from '../env'
 
 /**
@@ -19,6 +20,7 @@ export default (path, context, config = {
 
     return new Promise((resolve, reject) => {
         const failed = (msg, err) => {
+            collectErrorLog('request_failed', err || msg, { path, msg })
             skipToast || ErrorMessage(context, '#t-message', msg)
 
             reject(err || msg)

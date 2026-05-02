@@ -4,6 +4,7 @@ import { authService } from '../../services/auth'
 import { EXAM_WEEKS, STORE_KEY, VACATION_FROM, VACATION_TO, WEEK_TITLES } from '../../constants/index'
 import { InfoMessage, SuccessMessage, getThisDate, getThisWeeks, getThisDay } from '../../utils/index'
 import { buildCourseMap, formatCourseData, genForRenderData } from '../../utils/course'
+import { collectBreadcrumb, collectErrorLog } from '../../utils/error-logger'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
 
 let isExamTimeLoading = false
@@ -136,25 +137,40 @@ Page({
 
         await new Promise(async (resolve) => {
             if (detail.length === 0) {
+                collectBreadcrumb('course_render_empty', { startingDate })
                 return resolve()
             }
 
-            const formatted = formatCourseData(detail)
-            const courseMap = buildCourseMap(formatted)
-            const renderData = genForRenderData(courseMap, startingDate)
+            try {
+                const formatted = formatCourseData(detail)
+                const courseMap = buildCourseMap(formatted)
+                const renderData = genForRenderData(courseMap, startingDate)
 
-            this.setData({
-                renderData,
-                cacheData: {
-                    clas: clas,
-                    detail: detail,
-                    startingDate: startingDate,
-                }
-            }, () => {
-                this.initStateVar()
-                wx.hideLoading()
+                this.setData({
+                    renderData,
+                    cacheData: {
+                        clas: clas,
+                        detail: detail,
+                        startingDate: startingDate,
+                    }
+                }, () => {
+                    collectBreadcrumb('course_render_ready', {
+                        detailLength: detail.length,
+                        renderDataLength: renderData.length,
+                        startingDate,
+                    })
+                    this.initStateVar()
+                    wx.hideLoading()
+                    resolve()
+                })
+            } catch (err) {
+                collectErrorLog('course_render_failed', err, {
+                    detailLength: detail.length,
+                    startingDate,
+                    firstCourse: detail[0] || null,
+                })
                 resolve()
-            })
+            }
         })
     },
     displayLoginDialog() {

@@ -4,6 +4,9 @@ import {
     getTimestampAfterMin, formatTimestamp, isNowMoreThan,
     InfoMessage, SuccessMessage, ErrorMessage
 } from '../../utils/index'
+import {
+    addRealtimeFilterMsg, clearErrorLogs, collectBreadcrumb, getErrorReport
+} from '../../utils/error-logger'
 import { authService } from '../../services/auth'
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
 
@@ -56,6 +59,15 @@ Component({
                 return baseFormat + base64
             })
 
+            addRealtimeFilterMsg('feedback')
+            collectBreadcrumb('feedback_confirm', {
+                hasContact: Boolean(feedbackContact),
+                contentLength: feedbackContent.length,
+                fileCount: files.length,
+            })
+
+            const errorReport = getErrorReport()
+            const contentWithReport = `${feedbackContent}\n\n--- 自动诊断信息 ---\n${errorReport}`
             const tmplId = '1d64jYWoWcsubULXUEqCXPrzblA_AoUAcmXVwzp-Tp0'
             const reqSubMsg = await wx.requestSubscribeMessage({
                 tmplIds: [tmplId],
@@ -79,7 +91,7 @@ Component({
                                 code: res.code,
                                 config: `${configBase64} - SubMsg[${reqSubMsgResult}]`,
                                 contact: feedbackContact,
-                                content: feedbackContent,
+                                content: contentWithReport,
                                 files,
                             }
                         })
@@ -91,6 +103,8 @@ Component({
                         SuccessMessage(this, '#feedback-message', '感谢您的反馈')
 
                         wx.setStorageSync(STORE_KEY.FEEDBACK_INTERVAL_TIME, getTimestampAfterMin(FEEDBACK_INTERVAL_TIME))
+                        collectBreadcrumb('feedback_success')
+                        clearErrorLogs()
                     } catch (err) {
                         ErrorMessage(this, '#feedback-message', '关键时刻出问题，反馈失败了')
                     }
