@@ -1,0 +1,53 @@
+{
+  "name": "weapp-vite-tailwindcss-tdesign-template",
+  "type": "module",
+  "version": "1.0.8",
+  "private": true,
+  "description": "原生微信小程序 weapp-vite + tailwindcss + tdesign 模板",
+  "author": "ice breaker <1324318532@qq.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/weapp-vite/weapp-vite.git",
+    "directory": "templates/weapp-vite-tailwindcss-tdesign-template"
+  },
+  "bugs": {
+    "url": "https://github.com/weapp-vite/weapp-vite/issues"
+  },
+  "keywords": [],
+  "scripts": {
+    "dev": "wv dev",
+    "dev:open": "wv dev -o",
+    "dev:ui": "wv dev --ui",
+    "dev:open:ui": "wv dev --ui -o",
+    "build": "wv build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "open": "wv open",
+    "stylelint": "stylelint \"src/**/*.{css,scss,vue,wxss}\" --allow-empty-input",
+    "stylelint:fix": "stylelint \"src/**/*.{css,scss,vue,wxss}\" --fix --allow-empty-input",
+    "g": "wv generate",
+    "postinstall": "wv prepare"
+  },
+  "dependencies": {
+    "tdesign-miniprogram": "^1.15.3"
+  },
+  "devDependencies": {
+    "@icebreakers/eslint-config": "^7.0.1",
+    "@icebreakers/stylelint-config": "^5.0.2",
+    "@iconify-json/mdi": "^1.2.3",
+    "@iconify/tailwind4": "^1.2.3",
+    "@types/node": "^26.1.1",
+    "@weapp-vite/dashboard": "^6.18.6",
+    "eslint": "^10.7.0",
+    "miniprogram-api-typings": "^5.2.1",
+    "postcss": "^8.5.22",
+    "sass": "^1.101.6",
+    "stylelint": "^17.14.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3",
+    "weapp-tailwindcss": "^5.2.6",
+    "weapp-vite": "^6.18.6",
+    "wevu": "^6.18.6"
+  }
+}
