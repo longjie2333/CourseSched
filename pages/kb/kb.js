@@ -1,13 +1,10 @@
-import request from '../../utils/request'
-import { courseService } from '../../services/course'
+import { createStoreBindings } from 'mobx-miniprogram-bindings'
 import { authService } from '../../services/auth'
-import { EXAM_WEEKS, STORE_KEY, VACATION_FROM, VACATION_TO, WEEK_TITLES } from '../../constants/index'
+import { EXAM_WEEKS, VACATION_FROM, VACATION_TO, WEEK_TITLES } from '../../constants/index'
 import { InfoMessage, SuccessMessage, getThisDate, getThisWeeks, getThisDay } from '../../utils/index'
-import { buildCourseMap, formatCourseData, genForRenderData } from '../../utils/course'
-import { collectBreadcrumb, collectErrorLog } from '../../utils/error-logger'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
+import { scheduleStore } from '../../modules/schedule/store'
 
-let isExamTimeLoading = false
 let dontNavToPage = false
 
 Page({
@@ -39,7 +36,26 @@ Page({
         show_exam_time_loadFail: false,
         navbarStyle: ''
     },
-    async onLoad(query) {
+    onLoad(query) {
+        this.storeBindings = createStoreBindings(this, {
+            store: scheduleStore,
+            fields: {
+                cacheData: store => store.cacheData,
+                renderData: store => store.renderData,
+                examTimeData: store => store.examTimeData,
+                labelData: store => store.labelData,
+                show_exam_time_loading: store => store.examLoading,
+                show_exam_time_loadFail: store => store.examLoadFail,
+            },
+            actions: {
+                loadSchedule: 'loadSchedule',
+                loadExamTime: 'loadExamTime',
+                loadLabel: 'loadLabel',
+                commitSchedule: 'commitSchedule',
+                clearSchedule: 'clear',
+            },
+        })
+
         wx.showLoading({
             title: '加载中',
             mask: true,
@@ -51,19 +67,23 @@ Page({
             ifThisWeek: getThisDay()
         })
 
+        this.loadPage()
+    },
+    async loadPage() {
         await this.loadData()
         await this.loadLabelData()
         await this.initStateVar()
-        await this.handleData()
 
         wx.hideLoading()
     },
     async loadData() {
         const that = this
-        const data = await courseService.getCache(this, {
+        const data = await this.loadSchedule(this, {
+            autoUpdate: true,
             async onUpdateCallback(updatedData) {
                 wx.navigateBack()
-                await that.handleData(updatedData)
+                await that.commitSchedule(updatedData)
+                await that.initStateVar()
                 SuccessMessage(that, '#t-message', '课表已更新')
             }
         })
@@ -75,38 +95,23 @@ Page({
         const { startingDate, ...otherData } = data
 
         if (Object.keys(otherData).length === 0) {
-            this.setData({
-                'cacheData.startingDate': startingDate
-            })
-
+            await this.commitSchedule(data)
             dontNavToPage = true
             return this.displayLoginDialog()
         }
 
         dontNavToPage = false
 
-        const { clas, detail } = data
-
-        this.setData({
-            cacheData: { clas, detail, startingDate },
-        })
+        await this.commitSchedule(data)
     },
     async loadLabelData() {
-        const { startingDate } = this.data.cacheData
+        const { startingDate } = scheduleStore.cacheData
 
-        await new Promise(resolve => {
-            const labelData = wx.getStorageSync(STORE_KEY.LABEL_DATA)
-
-            this.setData({
-                labelData: labelData[startingDate] || {}
-            }, () => {
-                resolve()
-            })
-        })
+        await this.loadLabel(startingDate)
     },
     async initStateVar() {
         await new Promise(resolve => {
-            const { startingDate } = this.data.cacheData
+            const { startingDate } = scheduleStore.cacheData
             const ifThisWeeks = getThisWeeks(startingDate)
             const isVacation = Boolean(ifThisWeeks >= VACATION_FROM || ifThisWeeks < VACATION_TO)
             const stateVar = { ifThisWeeks, isVacation }
@@ -131,48 +136,6 @@ Page({
         if (isExamWeek) {
             await this.getExamTime()
         }
-    },
-    async handleData(data = null) {
-        const { cacheData } = this.data
-        const { startingDate, detail, clas } = data || cacheData
-
-        await new Promise(async (resolve) => {
-            if (detail.length === 0) {
-                collectBreadcrumb('course_render_empty', { startingDate })
-                return resolve()
-            }
-
-            try {
-                const formatted = formatCourseData(detail)
-                const courseMap = buildCourseMap(formatted)
-                const renderData = genForRenderData(courseMap, startingDate)
-
-                this.setData({
-                    renderData,
-                    cacheData: {
-                        clas: clas,
-                        detail: detail,
-                        startingDate: startingDate,
-                    }
-                }, () => {
-                    collectBreadcrumb('course_render_ready', {
-                        detailLength: detail.length,
-                        renderDataLength: renderData.length,
-                        startingDate,
-                    })
-                    this.initStateVar()
-                    wx.hideLoading()
-                    resolve()
-                })
-            } catch (err) {
-                collectErrorLog('course_render_failed', err, {
-                    detailLength: detail.length,
-                    startingDate,
-                    firstCourse: detail[0] || null,
-                })
-                resolve()
-            }
-        })
     },
     displayLoginDialog() {
         this.setData({
@@ -206,13 +169,10 @@ Page({
     async onLoggingIn(e) {
         const { done } = e.detail
 
-        await wx.removeStorage({
-            key: STORE_KEY.CACHE_DATA,
-        })
-
+        await this.clearSchedule()
         await this.loadData()
+        await this.loadLabelData()
         await this.initStateVar()
-        await this.handleData()
 
         done()
     },
@@ -220,13 +180,14 @@ Page({
         const { done } = e.detail
         const that = this
 
-        await courseService.getCache(this, {
+        await this.loadSchedule(this, {
             autoUpdate: false,
             nothingCallback() {
                 InfoMessage(that, '#t-message', '已经是最新的课表')
             },
             async onUpdateCallback(updatedData) {
-                await that.handleData(updatedData)
+                await that.commitSchedule(updatedData)
+                await that.initStateVar()
                 SuccessMessage(that, '#t-message', '课表已更新')
             }
         })
@@ -308,53 +269,7 @@ Page({
         })
     },
     async getExamTime() {
-        if (isExamTimeLoading || this.data.examTimeData.length !== 0) {
-            return
-        }
-
-        if (!this.data.show_exam_time_loading) {
-            this.setData({
-                show_exam_time_loading: true,
-                show_exam_time_loadFail: false
-            })
-        }
-
-        isExamTimeLoading = true
-
-        try {
-            const data = await request('examtime', this)
-
-            data.sort((a, b) => {
-                const periodA = parseInt(a.exam_period)
-                const periodB = parseInt(b.exam_period)
-
-                if (periodA !== periodB) {
-                    return periodA - periodB
-                }
-
-                const weekA = parseInt(a.week)
-                const weekB = parseInt(b.week)
-                return weekA - weekB
-            })
-
-            this.setData({
-                examTimeData: data || [],
-                show_exam_time_loading: false,
-                show_exam_time_loadFail: false
-            })
-
-            isExamTimeLoading = false
-        } catch(err) {
-            this.setData({
-                examTimeData: [],
-                show_exam_time_loading: false,
-                show_exam_time_loadFail: true
-            })
-
-            setTimeout(() => {
-                isExamTimeLoading = false
-            }, 3000)
-        }
+        await this.loadExamTime(this)
     },
     navigateToReport() {
         if (dontNavToPage) return
@@ -378,6 +293,11 @@ Page({
             title: '点击查看课表',
             path: '/pages/kb/kb',
             imageUrl: '../../images/cover.png'
+        }
+    },
+    onUnload() {
+        if (this.storeBindings) {
+            this.storeBindings.destroyStoreBindings()
         }
     },
 })

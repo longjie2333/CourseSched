@@ -135,7 +135,7 @@ Page({
         return {
             title: '将课表导入日历',
             path: '/pages/subCalendar/subCalendar',
-            imageUrl: '../../images/coverSubCal.png'
+            imageUrl: 'https://cn-img.owoser.cn/images/2026/08/06/cc76f9691869a8d1e1d861946aade972.png'
         }
     },
 })

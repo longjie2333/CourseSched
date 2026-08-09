@@ -1,6 +1,14 @@
 {
   "dependencies": {
     "crypto-js": "^4.2.0",
+    "mobx-miniprogram": "^6.12.3",
+    "mobx-miniprogram-bindings": "^6.0.0",
     "tdesign-miniprogram": "^1.10.1"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.1"
+  },
+  "scripts": {
+    "postinstall": "patch-package"
   }
 }
