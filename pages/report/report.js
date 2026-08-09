@@ -1,6 +1,8 @@
+import { reaction } from 'mobx-miniprogram'
 import { createStoreBindings } from 'mobx-miniprogram-bindings'
 import { WEEK_TITLES } from '../../constants/index'
 import { reportStore } from '../../modules/report/store'
+import { RequestScope } from '../../utils/request-scope'
 
 const emptyInfo = { sid: '', name: '', department: '', class: '', avatar: '' }
 const emptyAttendanceStatistics = { late: 0, leave_early: 0, leave: 0, absent: 0, online: 0, official_leave: 0 }
@@ -25,8 +27,12 @@ Page({
         leaveRecords: [],
         leaveHistoryStyle: '20000px',
         loadErrorMessage: '',
+        welcomeInfoRowCol: [{ width: '45%', height: '20px' }],
+        welcomeExamRowCol: [{ width: '80%', height: '20px' }],
     },
     onLoad(query) {
+        this.requestScope = new RequestScope()
+
         this.storeBindings = createStoreBindings(this, {
             store: reportStore,
             fields: {
@@ -46,21 +52,45 @@ Page({
             isVacation: (query.isVacation || '').toLowerCase() === 'true',
         })
 
+        this.disposeDerivedReaction = reaction(
+            () => [
+                reportStore.info,
+                reportStore.examScore,
+                reportStore.attendance,
+                reportStore.leaveHistory,
+                reportStore.reportLoad,
+            ],
+            () => {
+                this.refreshDerived()
+            }
+        )
+
         this.getSemesterReport()
     },
     onUnload() {
+        if (this.requestScope) {
+            this.requestScope.abortAll()
+        }
+
+        if (this.disposeDerivedReaction) {
+            this.disposeDerivedReaction()
+        }
+
         if (this.storeBindings) {
             this.storeBindings.destroyStoreBindings()
         }
     },
     buildSemesterReports(scores) {
-        if (this.data.isVacation || !Array.isArray(scores) || scores.length === 0) {
+        if (this.data.isVacation) {
             return Array.isArray(scores) ? scores : []
         }
 
-        const lastSemester = scores[scores.length - 1].semester || 0
+        const list = Array.isArray(scores) ? scores : []
+        const last = list[list.length - 1]
+        const lastSemester = (last && last.semester) || 0
+
         return [
-            ...scores,
+            ...list,
             { semester: lastSemester + 1, scores: [] }
         ]
     },
@@ -108,9 +138,9 @@ Page({
             show_leave_history_more: false,
         })
 
-        await this.loadReport(this)
+        await this.loadReport(this.requestScope)
 
-        if (reportStore.reportLoad.status === 'ready') {
+        if (reportStore.examScore) {
             const semesterReports = this.buildSemesterReports(reportStore.examScore)
 
             this.setData({

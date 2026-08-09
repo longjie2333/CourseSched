@@ -11,10 +11,10 @@ export const reportStore = observable({
 
     /**
      * 加载学期报告（并发去重）
-     * @param context 视图层上下文
+     * @param scope 请求作用域
      * @returns {Promise<boolean>} 是否成功
      */
-    loadReport: action(async function (context) {
+    loadReport: action(async function (scope) {
         if (this.requestPromise) {
             try {
                 await this.requestPromise
@@ -31,26 +31,54 @@ export const reportStore = observable({
         this.reportLoad = { status: 'loading' }
 
         const promise = (async () => {
-            const info = await reportService.getUserInfo(context)
-            const examScore = await reportService.getExamScore(context)
-            const attendance = await reportService.getAttendance(context)
-            const leaveHistory = await reportService.getLeaveHistory(context)
+            // 1. 先加载 info，welcome 区先展示
+            const info = await reportService.getUserInfo(scope)
 
             runInAction(() => {
                 this.info = info
-                this.examScore = examScore
-                this.attendance = attendance
-                this.leaveHistory = leaveHistory
             })
+
+            // 2. 其余接口并行加载，各自完成后立即写入对应字段，分区展示
+            let failed = false
+            const guard = (task, assign) => task.then(
+                (value) => {
+                    runInAction(() => {
+                        assign(value)
+                    })
+                    return true
+                },
+                (error) => {
+                    runInAction(() => {
+                        failed = true
+                        this.reportLoad = { status: 'error', error }
+                    })
+                    return false
+                }
+            )
+
+            await Promise.all([
+                guard(reportService.getExamScore(scope), (value) => {
+                    this.examScore = value
+                }),
+                guard(reportService.getAttendance(scope), (value) => {
+                    this.attendance = value
+                }),
+                guard(reportService.getLeaveHistory(scope), (value) => {
+                    this.leaveHistory = value
+                }),
+            ])
+
+            if (!failed) {
+                runInAction(() => {
+                    this.reportLoad = { status: 'ready' }
+                })
+            }
         })()
 
         this.requestPromise = promise
 
         try {
             await promise
-            runInAction(() => {
-                this.reportLoad = { status: 'ready' }
-            })
             return true
         } catch (error) {
             runInAction(() => {

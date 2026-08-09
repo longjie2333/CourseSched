@@ -1,6 +1,7 @@
 {
     "usingComponents": {
         "t-result": "tdesign-miniprogram/result/result",
+        "t-skeleton": "tdesign-miniprogram/skeleton/skeleton",
         "t-progress": "tdesign-miniprogram/progress/progress",
         "t-steps": "tdesign-miniprogram/steps/steps",
         "t-step-item": "tdesign-miniprogram/step-item/step-item",

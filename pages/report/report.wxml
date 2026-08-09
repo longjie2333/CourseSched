@@ -5,45 +5,7 @@
     bind:onManualUpdateTap="onManualUpdateTap"
 />
 
-<!--<view-->
-<!--    wx:if="{{ !show_semester_report }}"-->
-<!--    class="card"-->
-<!--&gt;-->
-<!--    <t-result-->
-<!--        icon="chevron-up-circle"-->
-<!--    >-->
-<!--        <view slot="title">请登录</view>-->
-<!--        <view slot="description">-->
-<!--            <view>点击上方班级标题文字</view>-->
-<!--            <view>登录后即可查看您的学期报告</view>-->
-<!--        </view>-->
-<!--    </t-result>-->
-<!--</view>-->
-
-<view
-    class="card"
-    wx:if="{{ reportLoad.status === 'loading' }}"
->
-    <t-skeleton
-        animation="gradient"
-        theme="paragraph"
-    />
-</view>
-
-<view
-    class="card"
-    wx:elif="{{ reportLoad.status === 'error' }}"
->
-    <t-result
-        icon="error-circle"
-        title="{{ loadErrorMessage }}"
-    />
-</view>
-
-<view
-    class="report-box"
-    wx:else
->
+<view class="report-box">
     <view class="report-card report-welcome">
         <view class="report-welcome-title">学期报告</view>
         <view>
@@ -57,8 +19,22 @@
                 src="/images/paper.png"
                 mode="aspectFit"
             />
-            <view class="report-welcome-desc">你好，{{ reportInfo.name }}同学</view>
-            <view class="report-welcome-text">您已在江职院中熬过 {{ semesterReports.length }} 个学期啦！</view>
+            <view class="report-welcome-desc">
+                <t-skeleton
+                    wx:if="{{ info === null }}"
+                    animation="gradient"
+                    row-col="{{ welcomeInfoRowCol }}"
+                />
+                <view wx:else>你好，{{ reportInfo.name }}同学</view>
+            </view>
+            <view class="report-welcome-text">
+                <t-skeleton
+                    wx:if="{{ examScore === null }}"
+                    animation="gradient"
+                    row-col="{{ welcomeExamRowCol }}"
+                />
+                <view wx:else>您已在江职院中熬过 {{ semesterReports.length }} 个学期啦！</view>
+            </view>
         </view>
     </view>
 
@@ -83,8 +59,24 @@
         </view>
 
         <view
+            class="card report-section-placeholder"
+            wx:if="{{ examScore === null }}"
+        >
+            <t-result
+                wx:if="{{ loadErrorMessage }}"
+                icon="error-circle"
+                title="{{ loadErrorMessage }}"
+            />
+            <t-skeleton
+                wx:else
+                animation="gradient"
+                theme="paragraph"
+            />
+        </view>
+
+        <view
             class="card"
-            wx:if="{{ currentExamScores.length === 0 }}"
+            wx:elif="{{ currentExamScores.length === 0 }}"
         >
             <t-result icon="empty">
                 <view
@@ -133,8 +125,24 @@
         </view>
 
         <view
+            class="card report-section-placeholder"
+            wx:if="{{ attendance === null }}"
+        >
+            <t-result
+                wx:if="{{ loadErrorMessage }}"
+                icon="error-circle"
+                title="{{ loadErrorMessage }}"
+            />
+            <t-skeleton
+                wx:else
+                animation="gradient"
+                theme="paragraph"
+            />
+        </view>
+
+        <view
             class="card"
-            wx:if="{{ attendanceRecords.length === 0 }}"
+            wx:elif="{{ attendanceRecords.length === 0 }}"
         >
             <t-result icon="trophy">
                 <view slot="title" style="color: var(--td-warning-color);">全勤奖</view>
@@ -237,8 +245,24 @@
         </view>
 
         <view
+            class="card report-section-placeholder"
+            wx:if="{{ leaveHistory === null }}"
+        >
+            <t-result
+                wx:if="{{ loadErrorMessage }}"
+                icon="error-circle"
+                title="{{ loadErrorMessage }}"
+            />
+            <t-skeleton
+                wx:else
+                animation="gradient"
+                theme="paragraph"
+            />
+        </view>
+
+        <view
             class="card"
-            wx:if="{{ leaveRecords.length === 0 }}"
+            wx:elif="{{ leaveRecords.length === 0 }}"
         >
             <t-result icon="heyhey">
                 <view

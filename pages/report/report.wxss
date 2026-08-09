@@ -238,3 +238,17 @@
     --td-divider-color:  var(--td-gray-color-5);
     margin: 15px 0;
 }
+
+.report-section-placeholder {
+    --td-skeleton-bg-color: var(--td-bg-color-component);
+    min-height: 120px;
+}
+
+.report-welcome-desc .t-skeleton {
+    margin-bottom: 5px;
+}
+
+.report-welcome-desc .t-skeleton,
+.report-welcome-text .t-skeleton {
+    --td-skeleton-bg-color: rgba(255, 255, 255, 0.35);
+}
