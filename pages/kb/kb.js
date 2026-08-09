@@ -1,28 +1,27 @@
+import { reaction } from 'mobx-miniprogram'
 import { createStoreBindings } from 'mobx-miniprogram-bindings'
 import { authService } from '../../services/auth'
 import { EXAM_WEEKS, VACATION_FROM, VACATION_TO, WEEK_TITLES } from '../../constants/index'
-import { InfoMessage, SuccessMessage, getThisDate, getThisWeeks, getThisDay } from '../../utils/index'
+import { InfoMessage, SuccessMessage, getThisDate, getThisWeeks } from '../../utils/index'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
-import { scheduleStore } from '../../modules/schedule/store'
+import { RefreshResult, scheduleStore } from '../../modules/schedule/store'
 
 let dontNavToPage = false
 
 Page({
     data: {
-        cacheData: {
-            clas: '',
-            detail: [],
-            startingDate: '',
-        },
-        renderData: [],
-        examTimeData: [],
-        labelData: {},
+        className: '',
+        courseList: null,
+        examList: [],
+        startingDate: '',
+        scheduleLoad: { status: 'idle' },
+        currentLabelData: {},
+        showExamTimeLoading: true,
+        showExamTimeLoadFail: false,
         detailContent: {},
         labelId: '',
         weekTitles: WEEK_TITLES,
         ifToday: '',
-        ifThisWeek: 1,
-        ifThisWeeks: 0,
         ifWeeksChanging: false,
         isExamWeek: false,
         isVacation: false,
@@ -32,100 +31,117 @@ Page({
         show_tabs_tag: false,
         show_detail_popup: false,
         show_label_popup: false,
-        show_exam_time_loading: true,
-        show_exam_time_loadFail: false,
         navbarStyle: ''
     },
     onLoad(query) {
         this.storeBindings = createStoreBindings(this, {
             store: scheduleStore,
             fields: {
-                cacheData: store => store.cacheData,
-                renderData: store => store.renderData,
-                examTimeData: store => store.examTimeData,
-                labelData: store => store.labelData,
-                show_exam_time_loading: store => store.examLoading,
-                show_exam_time_loadFail: store => store.examLoadFail,
+                className: store => store.className,
+                courseList: store => store.courseList,
+                examList: store => store.examList,
+                startingDate: store => store.startingDate,
+                scheduleLoad: store => store.scheduleLoad,
+                currentLabelData: store => (store.labelData && store.labelData[store.startingDate]) || {},
+                showExamTimeLoading: store => store.examLoad.status === 'idle' || store.examLoad.status === 'loading',
+                showExamTimeLoadFail: store => store.examLoad.status === 'error'
             },
             actions: {
                 loadSchedule: 'loadSchedule',
                 loadExamTime: 'loadExamTime',
-                loadLabel: 'loadLabel',
-                commitSchedule: 'commitSchedule',
-                clearSchedule: 'clear',
-            },
+                clearSchedule: 'clear'
+            }
         })
+
+        this.stopRefreshWatch = reaction(
+            () => scheduleStore.refreshed,
+            (result) => {
+                if (result === RefreshResult.Updated) {
+                    this.initializeScheduleView()
+                    SuccessMessage(this, '#t-message', '课程表已更新')
+                }
+            }
+        )
 
         wx.showLoading({
             title: '加载中',
-            mask: true,
+            mask: true
         })
 
         this.calcNavbarStyle()
         this.setData({
-            ifToday: getThisDate(),
-            ifThisWeek: getThisDay()
+            ifToday: getThisDate()
         })
 
         this.loadPage()
     },
     async loadPage() {
-        await this.loadData()
-        await this.loadLabelData()
-        await this.initStateVar()
+        try {
+            await this.loadData()
 
-        wx.hideLoading()
-    },
-    async loadData() {
-        const that = this
-        const data = await this.loadSchedule(this, {
-            autoUpdate: true,
-            async onUpdateCallback(updatedData) {
-                wx.navigateBack()
-                await that.commitSchedule(updatedData)
-                await that.initStateVar()
-                SuccessMessage(that, '#t-message', '课表已更新')
+            if (scheduleStore.scheduleLoad.status !== 'error') {
+                this.initializeScheduleView()
             }
-        })
+        } finally {
+            wx.hideLoading()
+        }
+    },
+    currentWeek() {
+        const weeks = scheduleStore.startingDate ? getThisWeeks(scheduleStore.startingDate) : 0
 
-        if (!data) {
+        return typeof weeks === 'number' ? weeks : 0
+    },
+    async loadData(options = {}) {
+        const result = await this.loadSchedule(this, options)
+
+        if (scheduleStore.scheduleLoad.status === 'error') {
+            if (result === RefreshResult.AuthRequired) {
+                dontNavToPage = true
+                return this.displayLoginDialog()
+            }
+
             return
         }
 
-        const { startingDate, ...otherData } = data
-
-        if (Object.keys(otherData).length === 0) {
-            await this.commitSchedule(data)
-            dontNavToPage = true
-            return this.displayLoginDialog()
+        dontNavToPage = false
+    },
+    initializeScheduleView() {
+        if (!scheduleStore.startingDate) {
+            return
         }
 
-        dontNavToPage = false
+        const weeks = this.currentWeek()
+        const isVacation = Boolean(weeks >= VACATION_FROM || weeks < VACATION_TO)
 
-        await this.commitSchedule(data)
-    },
-    async loadLabelData() {
-        const { startingDate } = scheduleStore.cacheData
-
-        await this.loadLabel(startingDate)
-    },
-    async initStateVar() {
-        await new Promise(resolve => {
-            const { startingDate } = scheduleStore.cacheData
-            const ifThisWeeks = getThisWeeks(startingDate)
-            const isVacation = Boolean(ifThisWeeks >= VACATION_FROM || ifThisWeeks < VACATION_TO)
-            const stateVar = { ifThisWeeks, isVacation }
-
-            this.setData({
-                ...stateVar, ...this.changeWeeksIndex(ifThisWeeks),
-            }, () => {
-                resolve()
-
-                if (isVacation) {
-                    this.navigateToReport()
-                }
-            })
+        this.setData({
+            isVacation,
+            ...this.changeWeeksIndex(weeks)
         })
+
+        if (isVacation) {
+            this.navigateToReport()
+        }
+    },
+    async refreshSchedule(options = {}) {
+        if (options.clear) {
+            await this.clearSchedule()
+        }
+
+        await this.loadData({ force: true })
+
+        if (scheduleStore.scheduleLoad.status === 'error') {
+            return
+        }
+
+        this.initializeScheduleView()
+
+        if (options.successMessage) {
+            SuccessMessage(this, '#t-message', options.successMessage)
+        }
+
+        if (options.reloadExam && this.data.isExamWeek) {
+            await this.getExamTime()
+        }
     },
     async checkStateVar(data = null) {
         const { isExamWeek } = {
@@ -139,12 +155,12 @@ Page({
     },
     displayLoginDialog() {
         this.setData({
-            show_login_dialog: true,
+            show_login_dialog: true
         })
     },
     displayManualUpdateDialog() {
         this.setData({
-            show_manual_update_dialog: true,
+            show_manual_update_dialog: true
         })
     },
     displaySomeDetail(e) {
@@ -169,41 +185,30 @@ Page({
     async onLoggingIn(e) {
         const { done } = e.detail
 
-        await this.clearSchedule()
-        await this.loadData()
-        await this.loadLabelData()
-        await this.initStateVar()
-
-        done()
+        try {
+            await this.refreshSchedule({ clear: true })
+        } finally {
+            done()
+        }
     },
     async onManualUpdate(e) {
         const { done } = e.detail
-        const that = this
 
-        await this.loadSchedule(this, {
-            autoUpdate: false,
-            nothingCallback() {
-                InfoMessage(that, '#t-message', '已经是最新的课表')
-            },
-            async onUpdateCallback(updatedData) {
-                await that.commitSchedule(updatedData)
-                await that.initStateVar()
-                SuccessMessage(that, '#t-message', '课表已更新')
-            }
-        })
-
-        if (this.data.isExamWeek) {
-            await this.getExamTime()
+        try {
+            await this.refreshSchedule({
+                reloadExam: true,
+                successMessage: '手动更新课表成功'
+            })
+        } finally {
+            done()
         }
-
-        done()
     },
     changeWeeksIndex(newWeeksIndex) {
         newWeeksIndex = newWeeksIndex > 19 || newWeeksIndex < 0 ? 0 : newWeeksIndex
 
         const newData = {
             currentWeeksIndex: newWeeksIndex,
-            isExamWeek: EXAM_WEEKS.includes(newWeeksIndex),
+            isExamWeek: EXAM_WEEKS.includes(newWeeksIndex)
         }
 
         this.checkStateVar(newData)
@@ -219,44 +224,34 @@ Page({
         })
     },
     onRollback() {
-        const { ifThisWeeks } = this.data
-
         this.setData({
-            ...this.changeWeeksIndex(ifThisWeeks),
+            ...this.changeWeeksIndex(this.currentWeek()),
             ifWeeksChanging: false,
-            show_tabs_tag: false,
+            show_tabs_tag: false
         })
     },
     onTabsChangeOrSliding(e) {
-        const { ifThisWeeks } = this.data
         const { value } = e.detail
 
         this.setData({
             ...this.changeWeeksIndex(value),
-            ifWeeksChanging: ifThisWeeks !== value,
-            show_tabs_tag: ifThisWeeks !== value,
+            ifWeeksChanging: this.currentWeek() !== value,
+            show_tabs_tag: this.currentWeek() !== value
         })
-    },
-    async onLabelUpdate(e) {
-        const { hasUpdated } = e.detail
-
-        if (hasUpdated) {
-            await this.loadLabelData()
-        }
     },
     calcNavbarStyle() {
         if (!wx.getMenuButtonBoundingClientRect || !systemInfo) {
-            return;
+            return
         }
 
-        const menuRect = wx.getMenuButtonBoundingClientRect();
+        const menuRect = wx.getMenuButtonBoundingClientRect()
         const navbarStyleVar = {
             'height-full': `${2 * menuRect.top - systemInfo.statusBarHeight + menuRect.height}px`,
             'height': `${(menuRect.top - systemInfo.statusBarHeight) * 2 + menuRect.height}px`,
             'padding-top': `${systemInfo.statusBarHeight}px`,
             'right': `${systemInfo.windowWidth - menuRect.left}px`,
             'capsule-height': `${menuRect.height}px`,
-            'capsule-width': `${menuRect.width}px`,
+            'capsule-width': `${menuRect.width}px`
         }
 
         Object.keys(navbarStyleVar).forEach(key => {
@@ -274,18 +269,20 @@ Page({
     navigateToReport() {
         if (dontNavToPage) return
 
+        if (scheduleStore.scheduleLoad.status === 'error') return
+
         if (!authService.isLoggedIn()) {
             InfoMessage(this, '#t-message', '请先填写学号和密码，以便查看学期报告')
             return this.displayLoginDialog()
         }
 
         wx.navigateTo({
-            url: '/pages/report/report?isVacation=' + this.data.isVacation,
+            url: '/pages/report/report?isVacation=' + this.data.isVacation
         })
     },
     navigateToSubCalendar() {
         wx.navigateTo({
-            url: '/pages/subCalendar/subCalendar',
+            url: '/pages/subCalendar/subCalendar'
         })
     },
     onShareAppMessage() {
@@ -299,5 +296,9 @@ Page({
         if (this.storeBindings) {
             this.storeBindings.destroyStoreBindings()
         }
-    },
+
+        if (this.stopRefreshWatch) {
+            this.stopRefreshWatch()
+        }
+    }
 })

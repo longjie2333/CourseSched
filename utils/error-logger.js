@@ -75,24 +75,16 @@ const getCurrentRoute = () => {
 }
 
 const summarizeCache = () => {
-    const cache = wx.getStorageSync(STORE_KEY.CACHE_DATA) || {}
-    const detail = Array.isArray(cache.detail) ? cache.detail : []
+    const cache = wx.getStorageSync(STORE_KEY.SCHEDULE_DATA) || {}
+    const courseList = Array.isArray(cache.courseList) ? cache.courseList : []
 
     return {
         hasCache: Boolean(cache && Object.keys(cache).length),
-        clas: cache.clas || '',
+        className: cache.className || '',
         startingDate: cache.startingDate || '',
-        detailLength: detail.length,
-        firstCourseKeys: detail[0] ? Object.keys(detail[0]) : [],
-        firstCourse: detail[0] ? {
-            title: detail[0].title,
-            week: detail[0].week,
-            weeks: detail[0].weeks,
-            start: detail[0].start,
-            end: detail[0].end,
-            hasLocation: detail[0].location !== undefined && detail[0].location !== null,
-            odd_even_weeks: detail[0].odd_even_weeks,
-        } : null,
+        courseListLength: courseList.length,
+        currentWeekReady: Boolean(courseList[0]?.[0]),
+        hasExpiredAt: typeof cache.expiredAt === 'number'
     }
 }
 
@@ -104,16 +96,17 @@ const summarizeCurrentPage = () => {
         return {}
     }
 
-    const { renderData, currentWeeksIndex, cacheData, labelData } = current.data
+    const { courseList, currentWeeksIndex, className, startingDate, currentLabelData } = current.data
+
     return {
         route: getCurrentRoute(),
         currentWeeksIndex,
-        cacheDetailLength: cacheData?.detail?.length || 0,
-        cacheStartingDate: cacheData?.startingDate || '',
-        renderDataLength: Array.isArray(renderData) ? renderData.length : -1,
-        currentWeekReady: Boolean(renderData?.[currentWeeksIndex]?.[0]),
-        currentWeekDateLength: renderData?.[currentWeeksIndex]?.[0]?.length || 0,
-        labelCount: labelData ? Object.keys(labelData).length : 0,
+        className: className || '',
+        startingDate: startingDate || '',
+        courseListLength: Array.isArray(courseList) ? courseList.length : 0,
+        currentWeekReady: Boolean(courseList?.[currentWeeksIndex]?.[0]),
+        currentWeekDateLength: courseList?.[currentWeeksIndex]?.[0]?.length || 0,
+        labelCount: currentLabelData ? Object.keys(currentLabelData).length : 0
     }
 }
 

@@ -1,219 +1,292 @@
-import { action, observable } from 'mobx-miniprogram'
-import { collectBreadcrumb, collectErrorLog } from '../../utils/error-logger'
-import { isNowMoreThan } from '../../utils/index'
-import { STORE_KEY } from '../../constants/index'
+import { action, observable, runInAction } from 'mobx-miniprogram'
+import CryptoJS from '../../miniprogram_npm/crypto-js/index'
+import { collectBreadcrumb } from '../../utils/error-logger'
+import { getTimestampAfterDays } from '../../utils/index'
+import { STORE_KEY, UPDATE_INTERVAL_TIME } from '../../constants/index'
 import { scheduleService } from './service'
 
-let isExamTimeLoading = false
+const PERSIST_KEYS = [
+    'className',
+    'courseList',
+    'examList',
+    'courseListSha256',
+    'labelData',
+    'startingDate',
+    'expiredAt',
+]
+
+export const RefreshResult = {
+    Cache: 'cache',
+    Loaded: 'loaded',
+    Refreshing: 'refreshing',
+    Updated: 'updated',
+    NotModified: 'not-modified',
+    Offline: 'offline',
+    AuthRequired: 'auth-required',
+    Failed: 'failed',
+}
+
+const readPersistedState = () => {
+    const stored = wx.getStorageSync(STORE_KEY.SCHEDULE_DATA)
+
+    return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {}
+}
+
+const persisted = readPersistedState()
 
 export const scheduleStore = observable({
-    cacheData: {
-        clas: '',
-        detail: [],
-        startingDate: '',
+    className: persisted.className || null,
+    courseList: persisted.courseList || null,
+    examList: persisted.examList || null,
+    courseListSha256: persisted.courseListSha256 || null,
+    labelData: persisted.labelData || null,
+    startingDate: persisted.startingDate || null,
+    expiredAt: persisted.expiredAt || null,
+    refreshed: null,
+    scheduleLoad: { status: 'idle' },
+    examLoad: { status: 'idle' },
+    requestPromise: null,
+    examPromise: null,
+
+    persist: action(function () {
+        const data = {}
+
+        for (const key of PERSIST_KEYS) {
+            data[key] = this[key]
+        }
+
+        wx.setStorageSync(STORE_KEY.SCHEDULE_DATA, data)
+    }),
+
+    /**
+     * 计算 SHA256 值，并按需更新开学日期与过期时间
+     * @param latestStartingDate 新获取的开学日期
+     * @param latestCourses 新获取的课程数据
+     * @param skip 跳过更新检查
+     * @returns true 为有变动，false 为无变动
+     */
+    sumCourseListSHA256: action(function (latestStartingDate, latestCourses, skip) {
+        const newSHA256 = CryptoJS.SHA256(JSON.stringify(latestCourses)).toString()
+        const updateIntervalTime = wx.getStorageSync(STORE_KEY.UPDATE_INTERVAL_TIME) || UPDATE_INTERVAL_TIME
+
+        this.expiredAt = getTimestampAfterDays(updateIntervalTime)
+
+        if (skip || this.startingDate !== latestStartingDate || this.courseListSha256 !== newSHA256) {
+            this.startingDate = latestStartingDate
+            this.courseListSha256 = newSHA256
+            return true
+        }
+
+        return false
+    }),
+
+    /**
+     * 请求结束后一次性构建课表渲染数据并保存
+     * @param courseListResponse 课程接口响应数据
+     */
+    normalizeSaveCourse: action(function (courseListResponse) {
+        if (this.startingDate === null) {
+            throw new Error('缺少开学日期')
+        }
+
+        const renderData = scheduleService.buildRenderData(courseListResponse.detail, this.startingDate)
+
+        this.className = courseListResponse.clas
+        this.courseList = renderData
+        collectBreadcrumb('course_render_ready', {
+            detailLength: courseListResponse.detail.length,
+            renderDataLength: renderData.length,
+            startingDate: this.startingDate,
+        })
+    }),
+
+    getFailureResult(error) {
+        if (error && error.stage === 'course') {
+            return RefreshResult.AuthRequired
+        }
+
+        return RefreshResult.Failed
     },
-    renderData: [],
-    examTimeData: [],
-    labelData: {},
-    examLoading: true,
-    examLoadFail: false,
-    schedulePromise: null,
-
-    setCacheData: action(function (data) {
-        this.cacheData = {
-            clas: data.clas || '',
-            detail: data.detail || [],
-            startingDate: data.startingDate || '',
-        }
-    }),
-
-    setExamLoading: action(function (loading) {
-        this.examLoading = loading
-
-        if (loading) {
-            this.examLoadFail = false
-        }
-    }),
-
-    setExamData: action(function (data) {
-        this.examTimeData = data
-        this.examLoading = false
-        this.examLoadFail = false
-    }),
-
-    setExamFail: action(function () {
-        this.examTimeData = []
-        this.examLoading = false
-        this.examLoadFail = true
-    }),
-
-    commitSchedule: action(function (data) {
-        const { startingDate, detail } = data
-
-        this.setCacheData(data)
-
-        if (!detail || detail.length === 0) {
-            collectBreadcrumb('course_render_empty', { startingDate })
-            return
-        }
-
-        try {
-            const renderData = scheduleService.buildRenderData(detail, startingDate)
-
-            this.renderData = renderData
-            collectBreadcrumb('course_render_ready', {
-                detailLength: detail.length,
-                renderDataLength: renderData.length,
-                startingDate,
-            })
-        } catch (err) {
-            collectErrorLog('course_render_failed', err, {
-                detailLength: detail.length,
-                startingDate,
-                firstCourse: detail[0] || null,
-            })
-        }
-    }),
-
-    loadLabel: action(function (startingDate) {
-        const labelData = wx.getStorageSync(STORE_KEY.LABEL_DATA)
-
-        this.labelData = (labelData && labelData[startingDate]) || {}
-    }),
 
     /**
      * 读取缓存并按需自动/手动更新课表
      * @param context 视图层上下文
-     * @param options {autoUpdate, onUpdateCallback, nothingCallback}
-     * @returns {Promise<object|null>}
+     * @param options {force}
+     * @returns {Promise<string>} RefreshResult
      */
-    async loadSchedule(context, options = {}) {
-        const { autoUpdate = true, onUpdateCallback, nothingCallback } = options
-        const cacheData = wx.getStorageSync(STORE_KEY.CACHE_DATA)
-
-        const persist = (data) => {
-            if (!data) {
-                return
-            }
-
-            const { startingDate, ...rest } = data
-
-            if (Object.keys(rest).length === 0) {
-                return
-            }
-
-            wx.setStorageSync(STORE_KEY.CACHE_DATA, data)
-            this.setCacheData(data)
-        }
-
-        const getUpdate = async (notify = true) => {
-            if (this.schedulePromise) {
-                try {
-                    return await this.schedulePromise
-                } catch (err) {
-                    return null
-                }
+    loadSchedule: action(async function (context, options = {}) {
+        const requestAll = async () => {
+            if (this.requestPromise) {
+                return this.requestPromise
             }
 
             const promise = (async () => {
-                const updatedData = await scheduleService.fetchSchedule(context)
+                let date
 
-                if (!updatedData) {
-                    return null
+                try {
+                    date = await scheduleService.getStartingDate(context)
+                } catch (error) {
+                    throw { stage: 'startingDate', error }
                 }
 
-                const { startingDate, ...data } = updatedData
-
-                if (Object.keys(data).length === 0) {
-                    return updatedData
+                try {
+                    const data = await scheduleService.getCourseList(context)
+                    return [date, data]
+                } catch (error) {
+                    throw { stage: 'course', error }
                 }
-
-                const { sha256 } = updatedData
-
-                if (
-                    cacheData &&
-                    startingDate === cacheData.startingDate &&
-                    sha256 === cacheData.sha256
-                ) {
-                    notify && nothingCallback && nothingCallback(cacheData)
-                    return cacheData
-                }
-
-                persist(updatedData)
-
-                if (notify && onUpdateCallback) {
-                    await onUpdateCallback(updatedData)
-                }
-
-                return updatedData
             })()
 
-            this.schedulePromise = promise
+            this.requestPromise = promise
 
             try {
                 return await promise
             } finally {
-                this.schedulePromise = null
+                this.requestPromise = null
             }
         }
 
-        if (!cacheData) {
-            return getUpdate(false)
+        if (!options.force && this.courseList) {
+            this.scheduleLoad = { status: 'ready', isStale: false }
+
+            if (!this.expiredAt || Date.now() > this.expiredAt) {
+                this.scheduleLoad = { status: 'ready', isStale: true }
+
+                setTimeout(() => {
+                    requestAll()
+                        .then(([startingDateResponse, courseListResponse]) => {
+                            const summed = this.sumCourseListSHA256(startingDateResponse, courseListResponse.detail)
+
+                            runInAction(() => {
+                                if (summed) {
+                                    this.normalizeSaveCourse(courseListResponse)
+                                    this.persist()
+                                    this.scheduleLoad = { status: 'ready', isStale: false }
+                                    this.refreshed = RefreshResult.Updated
+                                    return
+                                }
+
+                                this.persist()
+                                this.scheduleLoad = { status: 'ready', isStale: false }
+                                this.refreshed = RefreshResult.NotModified
+                            })
+                        })
+                        .catch((error) => {
+                            runInAction(() => {
+                                this.scheduleLoad = { status: 'ready', isStale: true, error }
+                                this.refreshed = this.getFailureResult(error)
+                            })
+                        })
+                })
+
+                return RefreshResult.Refreshing
+            }
+
+            return RefreshResult.Cache
         }
 
-        if (!autoUpdate) {
-            return getUpdate()
-        }
-
-        if (isNowMoreThan(cacheData.nextUpdateTime)) {
-            setTimeout(() => {
-                getUpdate().catch(() => {})
-            }, 10)
-        }
-
-        this.setCacheData(cacheData)
-        return cacheData
-    },
-
-    /**
-     * 加载考试时间，带并发与重试冷却
-     * @param context 视图层上下文
-     */
-    async loadExamTime(context) {
-        if (isExamTimeLoading || this.examTimeData.length !== 0) {
-            return
-        }
-
-        if (!this.examLoading) {
-            this.setExamLoading(true)
-        }
-
-        isExamTimeLoading = true
+        this.scheduleLoad = { status: 'loading' }
 
         try {
-            const data = await scheduleService.fetchExamTime(context)
+            const [startingDateResponse, courseListResponse] = await requestAll()
 
-            this.setExamData(data || [])
-            isExamTimeLoading = false
-        } catch (err) {
-            this.setExamFail()
-
-            setTimeout(() => {
-                isExamTimeLoading = false
-            }, 3000)
+            runInAction(() => {
+                this.sumCourseListSHA256(startingDateResponse, courseListResponse.detail, true)
+                this.normalizeSaveCourse(courseListResponse)
+                this.persist()
+                this.scheduleLoad = { status: 'ready', isStale: false }
+            })
+            return RefreshResult.Loaded
+        } catch (error) {
+            runInAction(() => {
+                this.scheduleLoad = { status: 'error', error }
+            })
+            return this.getFailureResult(error)
         }
-    },
+    }),
+
+    /**
+     * 加载考试时间，带并发去重
+     * @param context 视图层上下文
+     */
+    loadExamTime: action(async function (context) {
+        if (this.examList !== null) {
+            this.examLoad = { status: 'ready', isStale: false }
+            return this.examList
+        }
+
+        if (this.examPromise) {
+            return this.examPromise
+        }
+
+        this.examLoad = { status: 'loading' }
+
+        const promise = scheduleService.fetchExamTime(context)
+            .then((data) => {
+                runInAction(() => {
+                    this.examList = data || []
+                    this.persist()
+                    this.examLoad = { status: 'ready', isStale: false }
+                })
+                return this.examList
+            })
+            .catch((error) => {
+                runInAction(() => {
+                    this.examLoad = { status: 'error', error }
+                })
+                return null
+            })
+
+        this.examPromise = promise
+
+        try {
+            return await promise
+        } finally {
+            this.examPromise = null
+        }
+    }),
+
+    /**
+     * 更新标签
+     * @param startingDate 开学日期
+     * @param labelId 标签 ID
+     * @param value 标签内容
+     */
+    updateLabel: action(function (startingDate, labelId, value) {
+        const lastLabel = this.labelData || {}
+        const data = lastLabel[startingDate] || {}
+        const nextData = { ...data, [labelId]: { value } }
+
+        this.labelData = { ...lastLabel, [startingDate]: nextData }
+        this.persist()
+    }),
+
+    /**
+     * 删除标签
+     * @param startingDate 开学日期
+     * @param labelId 标签 ID
+     */
+    removeLabel: action(function (startingDate, labelId) {
+        const lastLabel = this.labelData || {}
+        const data = lastLabel[startingDate] || {}
+        const nextData = { ...data }
+
+        delete nextData[labelId]
+        this.labelData = { ...lastLabel, [startingDate]: nextData }
+        this.persist()
+    }),
 
     clear: action(function () {
-        this.cacheData = {
-            clas: '',
-            detail: [],
-            startingDate: '',
-        }
-        this.renderData = []
-        this.examTimeData = []
-        this.labelData = {}
-        this.examLoadFail = false
-        wx.removeStorageSync(STORE_KEY.CACHE_DATA)
+        this.className = null
+        this.courseList = null
+        this.examList = null
+        this.courseListSha256 = null
+        this.labelData = null
+        this.startingDate = null
+        this.expiredAt = null
+        this.refreshed = null
+        this.scheduleLoad = { status: 'idle' }
+        this.examLoad = { status: 'idle' }
+        wx.removeStorageSync(STORE_KEY.SCHEDULE_DATA)
     }),
 })

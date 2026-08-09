@@ -1,4 +1,4 @@
-import { STORE_KEY } from '../../constants/index'
+import { scheduleStore } from '../../modules/schedule/store'
 
 Component({
     properties: {
@@ -21,22 +21,19 @@ Component({
         value: ''
     },
     observers: {
-        visible(){
+        visible() {
             const { startingDate, labelId } = this.data
-            const [ type, date, time ] = labelId.split('.')
-            const lastLabel = wx.getStorageSync(STORE_KEY.LABEL_DATA) || {}
+            const [type, date, time] = labelId.split('.')
+            const lastLabel = scheduleStore.labelData || {}
+            const labels = lastLabel[startingDate]
 
-            if (Object.keys(lastLabel).length === 0) {
-                return
-            }
-
-            if (!lastLabel[startingDate] || Object.keys(lastLabel[startingDate]).length === 0) {
+            if (!labels || Object.keys(labels).length === 0) {
                 return
             }
 
             this.setData({
-                defaultValue: lastLabel[startingDate][labelId]?.value || '',
-                subtitle: `${date} 第 ${parseInt(time) + 1} 节课`,
+                defaultValue: labels[labelId]?.value || '',
+                subtitle: `${date} 第${parseInt(time) + 1} 节课`
             })
         }
     },
@@ -47,7 +44,7 @@ Component({
                 visible: false,
                 defaultValue: '',
                 value: '',
-                subtitle: '',
+                subtitle: ''
             })
         },
         onChange(e) {
@@ -62,15 +59,7 @@ Component({
             const hasUpdated = value.trim() !== '' && value !== defaultValue
 
             if (hasUpdated) {
-                const lastLabel = wx.getStorageSync(STORE_KEY.LABEL_DATA) || {}
-                const data = lastLabel[startingDate] || {}
-
-                data[labelId] = {
-                    value
-                }
-                lastLabel[startingDate] = data
-
-                wx.setStorageSync(STORE_KEY.LABEL_DATA, lastLabel)
+                scheduleStore.updateLabel(startingDate, labelId, value)
             }
 
             this.triggerEvent('onUpdate', {
@@ -79,14 +68,8 @@ Component({
         },
         onClear() {
             const { startingDate, labelId } = this.data
-            const lastLabel = wx.getStorageSync(STORE_KEY.LABEL_DATA) || {}
-            const data = lastLabel[startingDate] || {}
 
-            delete data[labelId]
-
-            lastLabel[startingDate] = data
-
-            wx.setStorageSync(STORE_KEY.LABEL_DATA, lastLabel)
+            scheduleStore.removeLabel(startingDate, labelId)
 
             this.triggerEvent('onUpdate', {
                 hasUpdated: true
@@ -96,7 +79,7 @@ Component({
                 visible: false,
                 defaultValue: '',
                 value: '',
-                subtitle: '',
+                subtitle: ''
             })
         }
     }

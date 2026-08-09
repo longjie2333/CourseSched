@@ -1,5 +1,5 @@
 <navbar
-    title="{{ cacheData.clas }}"
+    title="{{ className }}"
     currentWeeks="{{ currentWeeksIndex + 1 }}"
     showVacationTag="{{ isVacation }}"
     ifWeeksChanging="{{ ifWeeksChanging }}"
@@ -24,13 +24,13 @@
         class="weekRow"
     >
         <view
-            class="{{ ifToday === renderData[currentWeeksIndex][0][week - 1] ? 'today' : '' }}"
+            class="{{ ifToday === courseList[currentWeeksIndex][0][week - 1] ? 'today' : '' }}"
             wx:for="{{ weekTitles }}"
             wx:key="weekTitle"
             wx:for-index="week"
         >
             <view class="weekRowText">{{ item }}</view>
-            <view class="weekRowDate">{{ renderData[currentWeeksIndex][0][week - 1] }}</view>
+            <view class="weekRowDate">{{ courseList[currentWeeksIndex][0][week - 1] }}</view>
         </view>
     </view>
 
@@ -44,8 +44,8 @@
         <course-grid
             weeks="{{ weeks }}"
             ifToday="{{ ifToday }}"
-            courseData="{{ renderData }}"
-            labelData="{{ labelData }}"
+            courseData="{{ courseList }}"
+            labelData="{{ currentLabelData }}"
             wx:if="{{ weeks < 18 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
@@ -54,9 +54,9 @@
         <exam-time-grid
             style="min-height: calc(100vh - (var(--navbar-height-full) + var(--week-row-height) + var(--week-row-padding-top) + 32px));"
             weeks="{{ weeks }}"
-            examTimeData="{{ examTimeData }}"
-            showExamTimeLoading="{{ show_exam_time_loading }}"
-            showExamTimeLoadFail="{{ show_exam_time_loadFail }}"
+            examList="{{ examList }}"
+            showExamTimeLoading="{{ showExamTimeLoading }}"
+            showExamTimeLoadFail="{{ showExamTimeLoadFail }}"
             wx:else
             bind:onExamItemTap="displaySomeDetail"
         />
@@ -87,8 +87,7 @@
 <label-popup
     visible="{{ show_label_popup }}"
     labelId="{{ labelId }}"
-    startingDate="{{ cacheData.startingDate }}"
-    bind:onUpdate="onLabelUpdate"
+    startingDate="{{ startingDate }}"
 />
 
 <notice />

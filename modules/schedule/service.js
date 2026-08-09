@@ -1,8 +1,5 @@
-import CryptoJS from '../../miniprogram_npm/crypto-js/index'
 import request from '../../utils/request'
-import { getTimestampAfterDays } from '../../utils/index'
 import { buildCourseMap, formatCourseData, genForRenderData } from '../../utils/course'
-import { STORE_KEY, UPDATE_INTERVAL_TIME } from '../../constants/index'
 
 export const scheduleService = {
     /**
@@ -30,44 +27,13 @@ export const scheduleService = {
     },
 
     /**
-     * 获取开学日期和课表数据，不负责缓存持久化
-     * @param context 视图层上下文
-     * @returns {Promise<{startingDate, clas, detail, nextUpdateTime, sha256} | {startingDate} | null>}
-     */
-    async fetchSchedule(context) {
-        let date = ''
-
-        try {
-            date = await this.getStartingDate(context)
-        } catch (err) {
-            return null
-        }
-
-        try {
-            const data = await this.getCourseList(context)
-            const updateIntervalTime = wx.getStorageSync(STORE_KEY.UPDATE_INTERVAL_TIME) || UPDATE_INTERVAL_TIME
-
-            return {
-                ...data,
-                startingDate: date,
-                nextUpdateTime: getTimestampAfterDays(updateIntervalTime),
-                sha256: CryptoJS.SHA256(JSON.stringify(data.detail)).toString(),
-            }
-        } catch (err) {
-            return {
-                startingDate: date,
-            }
-        }
-    },
-
-    /**
      * 获取并按考试节次/周排序考试时间
      * @param context 视图层上下文
      */
     async fetchExamTime(context) {
         const data = await this.getExamTime(context)
 
-        data.sort((a, b) => {
+        return [...(data || [])].sort((a, b) => {
             const periodA = parseInt(a.exam_period)
             const periodB = parseInt(b.exam_period)
 
@@ -79,8 +45,6 @@ export const scheduleService = {
             const weekB = parseInt(b.week)
             return weekA - weekB
         })
-
-        return data || []
     },
 
     /**

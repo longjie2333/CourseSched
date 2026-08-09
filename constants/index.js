@@ -19,8 +19,7 @@ export const STORE_KEY = {
     NOTICE_NO_REMIND: 'noticeNoRemind',
     FEEDBACK_INTERVAL_TIME: 'feedbackInterval',
     UPDATE_INTERVAL_TIME: 'updateInterval',
-    CACHE_DATA: 'cache',
-    LABEL_DATA: 'label',
+    SCHEDULE_DATA: 'schedule',
     ERROR_LOGS: 'errorLogs',
     CONFIG: 'config',
 }
