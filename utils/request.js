@@ -1,4 +1,5 @@
 import { ErrorMessage } from './index'
+import { STORE_KEY } from '../constants/index'
 import { collectErrorLog } from './error-logger'
 import env from '../env'
 
@@ -34,7 +35,7 @@ export default (path, context, config = {
                 ...headers,
             },
             data: {
-                ...wx.getStorageSync('config'),
+                ...wx.getStorageSync(STORE_KEY.AUTH),
                 ...body,
             },
             success: ({data, statusCode}) => {
