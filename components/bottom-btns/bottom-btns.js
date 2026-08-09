@@ -7,7 +7,7 @@ import {
 import {
     addRealtimeFilterMsg, clearErrorLogs, collectBreadcrumb, getErrorReport
 } from '../../utils/error-logger'
-import { authService } from '../../services/auth'
+import { authStore } from '../../modules/auth/store'
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
 
 Component({
@@ -47,7 +47,7 @@ Component({
                 return ErrorMessage(this, '#feedback-message', '为避免频繁反馈，请 ' + formatTimestamp(nextFeedbackTime) + ' 后再反馈')
             }
 
-            const { username, password } = authService.getConfig()
+            const { username, password } = authStore
             const wordArr = CryptoJS.enc.Utf8.parse(`${username}:${password}`)
             const configBase64 = CryptoJS.enc.Base64.stringify(wordArr)
             const files = feedbackFiles.map((file) => {

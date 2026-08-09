@@ -1,4 +1,5 @@
-import { authService } from '../../services/auth'
+import { authStore } from '../../modules/auth/store'
+import { scheduleStore } from '../../modules/schedule/store'
 import { ErrorMessage } from '../../utils/index'
 
 Component({
@@ -26,16 +27,22 @@ Component({
     lifetimes: {
         attached() {
             this.setData({
-                ifLoggedIn: authService.isLoggedIn(),
-                config: authService.getConfig()
+                ifLoggedIn: authStore.hasSession,
+                config: {
+                    username: authStore.username,
+                    password: authStore.password
+                }
             })
         }
     },
     pageLifetimes: {
         show() {
             this.setData({
-                ifLoggedIn: authService.isLoggedIn(),
-                config: authService.getConfig()
+                ifLoggedIn: authStore.hasSession,
+                config: {
+                    username: authStore.username,
+                    password: authStore.password
+                }
             })
         }
     },
@@ -46,13 +53,16 @@ Component({
             })
         },
         clearLogin() {
-            authService.clearAuth()
+            authStore.clear()
+            scheduleStore.clear()
 
             this.setData({
                 visible: false,
                 ifLoggedIn: false,
-                'config.username': '',
-                'config.password': '',
+                config: {
+                    username: '',
+                    password: ''
+                }
             })
 
             wx.restartMiniProgram({
@@ -72,7 +82,7 @@ Component({
                     mask: true
                 })
 
-                authService.setConfig(username, password)
+                authStore.setCredentials(username, password)
 
                 this.setData({
                     visible: false
@@ -82,7 +92,7 @@ Component({
                     username, password,
                     done: () => {
                         this.setData({
-                            ifLoggedIn: authService.isLoggedIn()
+                            ifLoggedIn: authStore.hasSession
                         })
 
                         wx.hideLoading()

@@ -1,6 +1,6 @@
 import { reaction } from 'mobx-miniprogram'
 import { createStoreBindings } from 'mobx-miniprogram-bindings'
-import { authService } from '../../services/auth'
+import { authStore } from '../../modules/auth/store'
 import { EXAM_WEEKS, VACATION_FROM, VACATION_TO, WEEK_TITLES } from '../../constants/index'
 import { InfoMessage, SuccessMessage, getThisDate, getThisWeeks } from '../../utils/index'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
@@ -271,7 +271,7 @@ Page({
 
         if (scheduleStore.scheduleLoad.status === 'error') return
 
-        if (!authService.isLoggedIn()) {
+        if (!authStore.hasSession) {
             InfoMessage(this, '#t-message', '请先填写学号和密码，以便查看学期报告')
             return this.displayLoginDialog()
         }

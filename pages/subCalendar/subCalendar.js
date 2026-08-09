@@ -1,6 +1,7 @@
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
 import { ErrorMessage, InfoMessage } from '../../utils/index'
-import { authService } from '../../services/auth'
+import { authService } from '../../modules/auth/service'
+import { authStore } from '../../modules/auth/store'
 import env from '../../env'
 
 Page({
@@ -90,7 +91,7 @@ Page({
     copySubUrl() {
         const { alarmVal, alarmCustomVal } = this.data
         const [ tm, ta ] = alarmVal
-        const { username, password } = authService.getConfig()
+        const { username, password } = authStore
         const wordArr = CryptoJS.enc.Utf8.parse(`${username}:${password}`)
         const en = CryptoJS.enc.Base64.stringify(wordArr)
         const subUrl = [ `${env.icsUrl}course/subscribe`, `?en=${en}`, '&cache' ]
