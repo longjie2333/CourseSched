@@ -1,5 +1,5 @@
 <navbar
-    title="{{ reportData.info.class || '你哪个班的？' }}"
+    title="{{ reportTitle }}"
     showVacationTag="{{ true }}"
     ifSubPage="{{ true }}"
     bind:onManualUpdateTap="onManualUpdateTap"
@@ -22,32 +22,22 @@
 
 <view
     class="card"
-    wx:if="{{ show_semester_report_loading }}"
+    wx:if="{{ reportLoad.status === 'loading' }}"
+>
+    <t-skeleton
+        animation="gradient"
+        theme="paragraph"
+    />
+</view>
+
+<view
+    class="card"
+    wx:elif="{{ reportLoad.status === 'error' }}"
 >
     <t-result
         icon="error-circle"
-        title="{{ errorMessage }}"
-        wx:if="{{ ifLoadFail }}"
+        title="{{ loadErrorMessage }}"
     />
-
-    <block wx:else>
-        <t-progress
-            class="report-progress"
-            theme="circle"
-            status="active"
-            size="83"
-            stroke-width="8"
-            label="{{ false }}"
-            percentage="{{ currPercentage }}"
-        >
-            <view
-                slot="label"
-                class="report-progress-label"
-            >{{ currPercentage }}</view>
-        </t-progress>
-
-        <view class="report-progress-title">{{ errorMessage }}</view>
-    </block>
 </view>
 
 <view
@@ -67,8 +57,8 @@
                 src="/images/paper.png"
                 mode="aspectFit"
             />
-            <view class="report-welcome-desc">你好，{{ reportData.info.name }}同学</view>
-            <view class="report-welcome-text">您已在江职院中熬过 {{ reportData.examScore.length }} 个学期啦！</view>
+            <view class="report-welcome-desc">你好，{{ reportInfo.name }}同学</view>
+            <view class="report-welcome-text">您已在江职院中熬过 {{ semesterReports.length }} 个学期啦！</view>
         </view>
     </view>
 
@@ -82,7 +72,7 @@
                         variant="light"
                         class="exam-score-semester {{ currSemester === semester ? 'exam-score-activate' : '' }}"
                         data-index="{{ semester }}"
-                        wx:for="{{ reportData.examScore }}"
+                        wx:for="{{ semesterReports }}"
                         wx:key="index"
                         wx:for-index="semester"
                         bind:tap="onChangeSemester"
@@ -94,7 +84,7 @@
 
         <view
             class="card"
-            wx:if="{{ reportData.examScore.length === 0 || !reportData.examScore[currSemester] }}"
+            wx:if="{{ currentExamScores.length === 0 }}"
         >
             <t-result icon="empty">
                 <view
@@ -115,7 +105,7 @@
             <view class="exam-score-box">
                 <view
                     class="exam-score-item"
-                    wx:for="{{ reportData.examScore[currSemester] }}"
+                    wx:for="{{ currentExamScores }}"
                     wx:key="index"
                 >
                     <view class="exam-score-name">{{ item.course_name }}</view>
@@ -144,7 +134,7 @@
 
         <view
             class="card"
-            wx:if="{{ reportData.attendance.data.length === 0 }}"
+            wx:if="{{ attendanceRecords.length === 0 }}"
         >
             <t-result icon="trophy">
                 <view slot="title" style="color: var(--td-warning-color);">全勤奖</view>
@@ -165,45 +155,45 @@
                 <view class="attendance-statistic">
                     <view class="attendance-statistic-title">迟到</view>
                     <view class="attendance-statistic-content">
-                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.late }}</view>
+                        <view class="attendance-statistic-num">{{ attendanceStatistics.late }}</view>
                         <view class="attendance-statistic-suffix">节</view>
                     </view>
                 </view>
                 <view class="attendance-statistic">
                     <view class="attendance-statistic-title">早退</view>
                     <view class="attendance-statistic-content">
-                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.leave_early }}</view>
+                        <view class="attendance-statistic-num">{{ attendanceStatistics.leave_early }}</view>
                         <view class="attendance-statistic-suffix">次</view>
                     </view>
                 </view>
                 <view class="attendance-statistic">
                     <view class="attendance-statistic-title">请假</view>
                     <view class="attendance-statistic-content">
-                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.leave }}</view>
+                        <view class="attendance-statistic-num">{{ attendanceStatistics.leave }}</view>
                         <view class="attendance-statistic-suffix">节</view>
                     </view>
                 </view>
                 <view class="attendance-statistic">
                     <view class="attendance-statistic-title">旷课</view>
                     <view class="attendance-statistic-content">
-                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.absent }}</view>
+                        <view class="attendance-statistic-num">{{ attendanceStatistics.absent }}</view>
                         <view class="attendance-statistic-suffix">节</view>
                     </view>
                 </view>
                 <view
                     class="attendance-statistic"
-                    wx:if="{{ reportData.attendance.statistics.online === '0' }}"
+                    wx:if="{{ attendanceStatistics.online === '0' }}"
                 >
                     <view class="attendance-statistic-title">网上到课</view>
                     <view class="attendance-statistic-content">
-                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.online }}</view>
+                        <view class="attendance-statistic-num">{{ attendanceStatistics.online }}</view>
                         <view class="attendance-statistic-suffix">次</view>
                     </view>
                 </view>
                 <view class="attendance-statistic">
                     <view class="attendance-statistic-title">请公假</view>
                     <view class="attendance-statistic-content">
-                        <view class="attendance-statistic-num">{{ reportData.attendance.statistics.official_leave }}</view>
+                        <view class="attendance-statistic-num">{{ attendanceStatistics.official_leave }}</view>
                         <view class="attendance-statistic-suffix">次</view>
                     </view>
                 </view>
@@ -216,12 +206,12 @@
                 theme="dot"
                 layout="vertical"
                 class="attendance-box"
-                current="{{ reportData.attendance.data.length }}"
+                current="{{ attendanceRecords.length }}"
             >
                 <t-step-item
                     class="attendance-item"
                     title="{{ item.course_name }}"
-                    wx:for="{{ reportData.attendance.data }}"
+                    wx:for="{{ attendanceRecords }}"
                     wx:key="index"
                 >
                     <view slot="content">
@@ -248,7 +238,7 @@
 
         <view
             class="card"
-            wx:if="{{ reportData.leaveHistory.length === 0 }}"
+            wx:if="{{ leaveRecords.length === 0 }}"
         >
             <t-result icon="heyhey">
                 <view
@@ -264,22 +254,22 @@
 
         <view
             class="report-card"
-            style="max-height: {{ !show_leave_history_more && reportData.leaveHistory.length > 3 ? '300px' : '20000px' }};"
+            style="max-height: {{ leaveHistoryStyle }};"
             wx:else
         >
-            <view class="leave-history-title">这学期你一共请了<view>{{ reportData.leaveHistory.length }}</view>次假</view>
+            <view class="leave-history-title">这学期你一共请了<view>{{ leaveRecords.length }}</view>次假</view>
 
             <t-steps
                 readonly
                 layout="vertical"
                 theme="dot"
-                current="{{ reportData.leaveHistory.length }}"
+                current="{{ leaveRecords.length }}"
                 class="leave-history-box"
             >
                 <t-step-item
                     class="leave-history-item"
                     title="{{ item.reason }}"
-                    wx:for="{{ reportData.leaveHistory }}"
+                    wx:for="{{ leaveRecords }}"
                     wx:key="index"
                 >
                     <view slot="content">
@@ -297,7 +287,7 @@
 
             <view
                 class="leave-history-more"
-                wx:if="{{ !show_leave_history_more && reportData.leaveHistory.length > 3 }}"
+                wx:if="{{ !show_leave_history_more && leaveRecords.length > 3 }}"
                 bind:tap="showLeaveHistory"
             >
                 <view>查看更多</view>

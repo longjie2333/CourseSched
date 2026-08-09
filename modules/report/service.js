@@ -1,5 +1,54 @@
-import request from '../utils/request'
-import { groupBySemester, sortGroupedByNum } from '../utils/report'
+import request from '../../utils/request'
+
+/**
+ * 按学期分类成绩数组
+ * @param arr 原成绩数组
+ * @returns {*[]}
+ */
+const groupBySemester = (arr) => {
+    const result = []
+
+    arr.forEach(item => {
+        const sem = parseInt(item.semester, 10)
+
+        if (isNaN(sem) || sem < 1) {
+            return
+        }
+
+        const index = sem - 1
+
+        if (!Array.isArray(result[index])) {
+            result[index] = []
+        }
+
+        result[index].push(item)
+    })
+
+    return result
+}
+
+/**
+ * 对分类好的成绩数组按 num 排序
+ * @param grouped
+ * @returns {*}
+ */
+const sortGroupedByNum = (grouped) => {
+    grouped.forEach((semesterArr) => {
+        if (Array.isArray(semesterArr)) {
+            semesterArr.sort((a, b) => {
+                const na = Number(a.num)
+                const nb = Number(b.num)
+
+                if (Number.isNaN(na)) return 1
+                if (Number.isNaN(nb)) return -1
+
+                return na - nb
+            })
+        }
+    })
+
+    return grouped
+}
 
 export const reportService = {
     /**
@@ -37,7 +86,10 @@ export const reportService = {
         })
 
         if (!data) return {
-            statistics: {},
+            statistics: {
+                late: 0, leave_early: 0, leave: 0,
+                absent: 0, online: 0, official_leave: 0
+            },
             data: []
         }
 
@@ -67,40 +119,5 @@ export const reportService = {
             skipToast: true,
             skipFailed: true
         }) || []
-    },
-
-    /**
-     * 获取全部报告的信息
-     * @param context 视图层上下文
-     * @param option 可选参数
-     */
-    async getFullReport(context, option = {
-        inProgressCallback: () => {},
-        doneCallback: () => {},
-    }) {
-        try {
-            const { inProgressCallback, doneCallback } = option
-
-            const info = await this.getUserInfo(context)
-
-            inProgressCallback && inProgressCallback()
-
-            const examScore = await this.getExamScore(context)
-
-            inProgressCallback && inProgressCallback()
-
-            const attendance = await this.getAttendance(context)
-
-            inProgressCallback && inProgressCallback()
-
-            const leaveHistory = await this.getLeaveHistory(context)
-            const result = { info, examScore, attendance, leaveHistory }
-
-            doneCallback && doneCallback(result)
-
-            return result
-        } catch (err) {
-            throw err
-        }
     }
 }
