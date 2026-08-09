@@ -1,7 +1,7 @@
 import { reaction } from 'mobx-miniprogram'
 import { createStoreBindings } from 'mobx-miniprogram-bindings'
 import { authStore } from '../../modules/auth/store'
-import { EXAM_WEEKS, VACATION_FROM, VACATION_TO, WEEK_TITLES } from '../../constants/index'
+import { EXAM_WEEKS, VACATION_FROM, VACATION_TO } from '../../constants/index'
 import { showMessage, getThisDate, getThisWeeks } from '../../utils/index'
 import { RequestScope } from '../../utils/request-scope'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
@@ -21,7 +21,6 @@ Page({
         showExamTimeLoadFail: false,
         detailContent: {},
         labelId: '',
-        weekTitles: WEEK_TITLES,
         ifToday: '',
         ifWeeksChanging: false,
         isExamWeek: false,

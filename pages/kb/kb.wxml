@@ -23,41 +23,280 @@
         slot="middle"
         class="weekRow"
     >
-        <view
-            class="{{ ifToday === courseList[currentWeeksIndex][0][week - 1] ? 'today' : '' }}"
-            wx:for="{{ weekTitles }}"
-            wx:key="weekTitle"
-            wx:for-index="week"
-        >
-            <view class="weekRowText">{{ item }}</view>
-            <view class="weekRowDate">{{ courseList[currentWeeksIndex][0][week - 1] }}</view>
+        <view class="">
+            <view class="weekRowText"></view>
+            <view class="weekRowDate"></view>
+        </view>
+        <view class="{{ ifToday === courseList[currentWeeksIndex][0][0] ? 'today' : '' }}">
+            <view class="weekRowText">一</view>
+            <view class="weekRowDate">{{ courseList[currentWeeksIndex][0][0] }}</view>
+        </view>
+        <view class="{{ ifToday === courseList[currentWeeksIndex][0][1] ? 'today' : '' }}">
+            <view class="weekRowText">二</view>
+            <view class="weekRowDate">{{ courseList[currentWeeksIndex][0][1] }}</view>
+        </view>
+        <view class="{{ ifToday === courseList[currentWeeksIndex][0][2] ? 'today' : '' }}">
+            <view class="weekRowText">三</view>
+            <view class="weekRowDate">{{ courseList[currentWeeksIndex][0][2] }}</view>
+        </view>
+        <view class="{{ ifToday === courseList[currentWeeksIndex][0][3] ? 'today' : '' }}">
+            <view class="weekRowText">四</view>
+            <view class="weekRowDate">{{ courseList[currentWeeksIndex][0][3] }}</view>
+        </view>
+        <view class="{{ ifToday === courseList[currentWeeksIndex][0][4] ? 'today' : '' }}">
+            <view class="weekRowText">五</view>
+            <view class="weekRowDate">{{ courseList[currentWeeksIndex][0][4] }}</view>
+        </view>
+        <view class="{{ ifToday === courseList[currentWeeksIndex][0][5] ? 'today' : '' }}">
+            <view class="weekRowText">六</view>
+            <view class="weekRowDate">{{ courseList[currentWeeksIndex][0][5] }}</view>
+        </view>
+        <view class="{{ ifToday === courseList[currentWeeksIndex][0][6] ? 'today' : '' }}">
+            <view class="weekRowText">日</view>
+            <view class="weekRowDate">{{ courseList[currentWeeksIndex][0][6] }}</view>
         </view>
     </view>
 
     <t-tab-panel
-        value="{{ weeks }}"
-        label="第{{ weeks + 1 }}周"
-        wx:for="{{ 20 }}"
-        wx:key="semesterWeeks"
-        wx:for-index="weeks"
+        value="{{ 0 }}"
+        label="第1周"
     >
         <course-grid
-            weeks="{{ weeks }}"
-            ifToday="{{ ifToday }}"
-            courseData="{{ courseList }}"
+            weekData="{{ courseList ? courseList[0] : [] }}"
             labelData="{{ currentLabelData }}"
-            wx:if="{{ weeks < 18 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
         />
+    </t-tab-panel>
 
+    <t-tab-panel
+        value="{{ 1 }}"
+        label="第2周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[1] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 2 }}"
+        label="第3周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[2] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 3 }}"
+        label="第4周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[3] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 4 }}"
+        label="第5周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[4] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 5 }}"
+        label="第6周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[5] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 6 }}"
+        label="第7周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[6] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 7 }}"
+        label="第8周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[7] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 8 }}"
+        label="第9周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[8] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 9 }}"
+        label="第10周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[9] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 10 }}"
+        label="第11周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[10] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 11 }}"
+        label="第12周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[11] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 12 }}"
+        label="第13周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[12] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 13 }}"
+        label="第14周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[13] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 14 }}"
+        label="第15周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[14] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 15 }}"
+        label="第16周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[15] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 16 }}"
+        label="第17周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[16] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 17 }}"
+        label="第18周"
+    >
+        <course-grid
+            weekData="{{ courseList ? courseList[17] : [] }}"
+            labelData="{{ currentLabelData }}"
+            bind:onCourseTap="displaySomeDetail"
+            bind:labeling="displayLabelPopup"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 18 }}"
+        label="第19周"
+    >
         <exam-time-grid
             style="min-height: calc(100vh - (var(--navbar-height-full) + var(--week-row-height) + var(--week-row-padding-top) + 32px));"
-            weeks="{{ weeks }}"
+            weeks="{{ 18 }}"
             examList="{{ examList }}"
             showExamTimeLoading="{{ showExamTimeLoading }}"
             showExamTimeLoadFail="{{ showExamTimeLoadFail }}"
-            wx:else
+            bind:onExamItemTap="displaySomeDetail"
+        />
+    </t-tab-panel>
+
+    <t-tab-panel
+        value="{{ 19 }}"
+        label="第20周"
+    >
+        <exam-time-grid
+            style="min-height: calc(100vh - (var(--navbar-height-full) + var(--week-row-height) + var(--week-row-padding-top) + 32px));"
+            weeks="{{ 19 }}"
+            examList="{{ examList }}"
+            showExamTimeLoading="{{ showExamTimeLoading }}"
+            showExamTimeLoadFail="{{ showExamTimeLoadFail }}"
             bind:onExamItemTap="displaySomeDetail"
         />
     </t-tab-panel>

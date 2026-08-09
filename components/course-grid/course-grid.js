@@ -1,18 +1,10 @@
-import { TIME_TITLES, WEEK_TITLES } from '../../constants/index'
+import { TIME_TITLES } from '../../constants/index'
 
 let lastClick = 0
 
 Component({
     properties: {
-        weeks: {
-            type: Number,
-            value: 0
-        },
-        ifToday: {
-            type: String,
-            value: ''
-        },
-        courseData: {
+        weekData: {
             type: Array,
             value: []
         },
@@ -22,7 +14,6 @@ Component({
         }
     },
     data: {
-        weekTitles: WEEK_TITLES,
         timeTitles: TIME_TITLES,
     },
     methods: {
@@ -33,8 +24,8 @@ Component({
                 return
             }
 
-            const [ type, weeks, week, time ] = id.split('.')
-            const data = this.data.courseData[weeks][week][time]
+            const [ type, week, time ] = id.split('.')
+            const data = this.data.weekData[week][time]
 
             this.triggerEvent('onCourseTap', {
                 type, data
