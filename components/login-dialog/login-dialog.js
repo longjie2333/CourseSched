@@ -1,5 +1,6 @@
 import { authStore } from '../../modules/auth/store'
 import { scheduleStore } from '../../modules/schedule/store'
+import { commonStore } from '../../modules/common/store'
 import { ErrorMessage } from '../../utils/index'
 
 Component({
@@ -55,6 +56,7 @@ Component({
         clearLogin() {
             authStore.clear()
             scheduleStore.clear()
+            commonStore.clear()
 
             this.setData({
                 visible: false,

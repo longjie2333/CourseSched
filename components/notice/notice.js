@@ -1,6 +1,6 @@
-import { STORE_KEY } from '../../constants/index'
 import request from '../../utils/request'
 import Dialog from 'tdesign-miniprogram/dialog'
+import { commonStore } from '../../modules/common/store'
 
 Component({
     options: {
@@ -23,7 +23,7 @@ Component({
     methods: {
         getNotice() {
             setTimeout(async () => {
-                const noRemind = wx.getStorageSync(STORE_KEY.NOTICE_NO_REMIND)
+                const noRemind = commonStore.NoticeMarkRead
 
                 try {
                     const { dialog } = await request('notice', this, {
@@ -59,7 +59,7 @@ Component({
                 if (_canShowDialog) {
                     Dialog.confirm(_dialogConfig)
                         .then(() => {
-                            wx.setStorageSync(STORE_KEY.NOTICE_NO_REMIND, _dialogConfig.pubdate)
+                            commonStore.markNoticeRead(_dialogConfig.pubdate)
                         })
                 }
             })

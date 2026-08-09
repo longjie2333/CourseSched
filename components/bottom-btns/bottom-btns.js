@@ -1,5 +1,5 @@
 import request from '../../utils/request'
-import { FEEDBACK_INTERVAL_TIME, STORE_KEY } from '../../constants/index'
+import { FEEDBACK_INTERVAL_TIME } from '../../constants/index'
 import {
     getTimestampAfterMin, formatTimestamp, isNowMoreThan,
     InfoMessage, SuccessMessage, ErrorMessage
@@ -8,6 +8,7 @@ import {
     addRealtimeFilterMsg, clearErrorLogs, collectBreadcrumb, getErrorReport
 } from '../../utils/error-logger'
 import { authStore } from '../../modules/auth/store'
+import { commonStore } from '../../modules/common/store'
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
 
 Component({
@@ -37,7 +38,7 @@ Component({
         },
         async confirmFeedback() {
             const { feedbackContact, feedbackContent, feedbackFiles } = this.data
-            const nextFeedbackTime = wx.getStorageSync(STORE_KEY.FEEDBACK_INTERVAL_TIME)
+            const nextFeedbackTime = commonStore.FeedbackNextTick
 
             if (feedbackContent === '') {
                 return InfoMessage(this, '#feedback-message', '请先填写反馈内容')
@@ -102,7 +103,7 @@ Component({
 
                         SuccessMessage(this, '#feedback-message', '感谢您的反馈')
 
-                        wx.setStorageSync(STORE_KEY.FEEDBACK_INTERVAL_TIME, getTimestampAfterMin(FEEDBACK_INTERVAL_TIME))
+                        commonStore.setFeedbackNextTick(getTimestampAfterMin(FEEDBACK_INTERVAL_TIME))
                         collectBreadcrumb('feedback_success')
                         clearErrorLogs()
                     } catch (err) {

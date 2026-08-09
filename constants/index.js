@@ -16,10 +16,9 @@ export const UPDATE_INTERVAL_TIME = 3
 export const FEEDBACK_INTERVAL_TIME = 60
 
 export const STORE_KEY = {
-    NOTICE_NO_REMIND: 'noticeNoRemind',
-    FEEDBACK_INTERVAL_TIME: 'feedbackInterval',
     UPDATE_INTERVAL_TIME: 'updateInterval',
     SCHEDULE_DATA: 'schedule',
     ERROR_LOGS: 'errorLogs',
     AUTH: 'auth',
+    COMMON: 'common',
 }
