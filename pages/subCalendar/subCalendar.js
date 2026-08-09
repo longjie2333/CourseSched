@@ -1,5 +1,6 @@
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
-import { ErrorMessage, InfoMessage } from '../../utils/index'
+import { showMessage } from '../../utils/index'
+import { RequestScope } from '../../utils/request-scope'
 import { authService } from '../../modules/auth/service'
 import { authStore } from '../../modules/auth/store'
 import env from '../../env'
@@ -40,7 +41,9 @@ Page({
         show_login_dialog: false
     },
     async onLoad(query) {
-        const { isValid } = await authService.checkIsValid(this)
+        this.requestScope = new RequestScope()
+
+        const { isValid } = await authService.checkIsValid(this.requestScope)
 
         this.setData({
             isLoggedIn: isValid,
@@ -76,14 +79,14 @@ Page({
     async onLoggingIn(e) {
         const { done } = e.detail
 
-        const { isValid, msg } = await authService.checkIsValid(this)
+        const { isValid, msg } = await authService.checkIsValid(this.requestScope)
 
         if (isValid) {
             this.setData({
                 isLoggedIn: true
             })
         } else {
-            ErrorMessage(this, '#t-message', msg)
+            showMessage('error', msg)
         }
 
         done()
@@ -102,7 +105,7 @@ Page({
             wx.setClipboardData({
                 data: subUrl.join(''),
                 success: () => {
-                    InfoMessage(this, '#t-message', `复制成功，上午和下午将会统一为${tm}分钟前提醒`)
+                    showMessage('info', `复制成功，上午和下午将会统一为${tm}分钟前提醒`)
                 }
             })
             return
@@ -111,13 +114,13 @@ Page({
         const tmC = tm === -1 ? alarmCustomVal.tm : tm
 
         if (tm === -1 && !tmC) {
-            return ErrorMessage(this, '#t-message', '上午自定义提醒时间不能为空')
+            return showMessage('error', '上午自定义提醒时间不能为空')
         }
 
         const taC = ta === -1 ? alarmCustomVal.ta : ta
 
         if (ta === -1 && !taC) {
-            return ErrorMessage(this, '#t-message', '下午自定义提醒时间不能为空')
+            return showMessage('error', '下午自定义提醒时间不能为空')
         }
 
         subUrl.push(`&tm=-${tmC}`)
@@ -128,9 +131,14 @@ Page({
         wx.setClipboardData({
             data: subUrl.join(''),
             success: () => {
-                InfoMessage(this, '#t-message', `复制成功，上午将会${tmC}分钟前提醒，下午为${taC}分钟前`)
+                showMessage('info', `复制成功，上午将会${tmC}分钟前提醒，下午为${taC}分钟前`)
             }
         })
+    },
+    onUnload() {
+        if (this.requestScope) {
+            this.requestScope.abortAll()
+        }
     },
     onShareAppMessage() {
         return {

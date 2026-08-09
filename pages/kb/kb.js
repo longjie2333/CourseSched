@@ -2,7 +2,8 @@ import { reaction } from 'mobx-miniprogram'
 import { createStoreBindings } from 'mobx-miniprogram-bindings'
 import { authStore } from '../../modules/auth/store'
 import { EXAM_WEEKS, VACATION_FROM, VACATION_TO, WEEK_TITLES } from '../../constants/index'
-import { InfoMessage, SuccessMessage, getThisDate, getThisWeeks } from '../../utils/index'
+import { showMessage, getThisDate, getThisWeeks } from '../../utils/index'
+import { RequestScope } from '../../utils/request-scope'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
 import { RefreshResult, scheduleStore } from '../../modules/schedule/store'
 
@@ -34,6 +35,8 @@ Page({
         navbarStyle: ''
     },
     onLoad(query) {
+        this.requestScope = new RequestScope()
+
         this.storeBindings = createStoreBindings(this, {
             store: scheduleStore,
             fields: {
@@ -58,7 +61,7 @@ Page({
             (result) => {
                 if (result === RefreshResult.Updated) {
                     this.initializeScheduleView()
-                    SuccessMessage(this, '#t-message', '课程表已更新')
+                    showMessage('success', '课程表已更新')
                 }
             }
         )
@@ -92,9 +95,12 @@ Page({
         return typeof weeks === 'number' ? weeks : 0
     },
     async loadData(options = {}) {
-        const result = await this.loadSchedule(this, options)
+        const result = await this.loadSchedule(this.requestScope, options)
 
         if (scheduleStore.scheduleLoad.status === 'error') {
+            const error = scheduleStore.scheduleLoad.error
+            showMessage('error', error instanceof Error ? error.message : '请求失败')
+
             if (result === RefreshResult.AuthRequired) {
                 dontNavToPage = true
                 return this.displayLoginDialog()
@@ -136,7 +142,7 @@ Page({
         this.initializeScheduleView()
 
         if (options.successMessage) {
-            SuccessMessage(this, '#t-message', options.successMessage)
+            showMessage('success', options.successMessage)
         }
 
         if (options.reloadExam && this.data.isExamWeek) {
@@ -264,7 +270,7 @@ Page({
         })
     },
     async getExamTime() {
-        await this.loadExamTime(this)
+        await this.loadExamTime(this.requestScope)
     },
     navigateToReport() {
         if (dontNavToPage) return
@@ -272,7 +278,7 @@ Page({
         if (scheduleStore.scheduleLoad.status === 'error') return
 
         if (!authStore.hasSession) {
-            InfoMessage(this, '#t-message', '请先填写学号和密码，以便查看学期报告')
+            showMessage('info', '请先填写学号和密码，以便查看学期报告')
             return this.displayLoginDialog()
         }
 
@@ -293,6 +299,10 @@ Page({
         }
     },
     onUnload() {
+        if (this.requestScope) {
+            this.requestScope.abortAll()
+        }
+
         if (this.storeBindings) {
             this.storeBindings.destroyStoreBindings()
         }

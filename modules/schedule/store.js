@@ -1,5 +1,6 @@
 import { action, observable, runInAction } from 'mobx-miniprogram'
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
+import { AppError, AppErrorCode } from '../../utils/app-error'
 import { collectBreadcrumb } from '../../utils/error-logger'
 import { getTimestampAfterDays } from '../../utils/index'
 import { STORE_KEY, UPDATE_INTERVAL_TIME } from '../../constants/index'
@@ -100,9 +101,19 @@ export const scheduleStore = observable({
         })
     }),
 
+    /**
+     * 将请求错误映射为 RefreshResult
+     * @param error 请求错误
+     */
     getFailureResult(error) {
-        if (error && error.stage === 'course') {
-            return RefreshResult.AuthRequired
+        if (error instanceof AppError) {
+            if (error.code === AppErrorCode.AUTH) {
+                return RefreshResult.AuthRequired
+            }
+
+            if (error.code === AppErrorCode.NETWORK) {
+                return RefreshResult.Offline
+            }
         }
 
         return RefreshResult.Failed
@@ -110,40 +121,26 @@ export const scheduleStore = observable({
 
     /**
      * 读取缓存并按需自动/手动更新课表
-     * @param context 视图层上下文
+     * @param scope 请求作用域
      * @param options {force}
      * @returns {Promise<string>} RefreshResult
      */
-    loadSchedule: action(async function (context, options = {}) {
-        const requestAll = async () => {
+    loadSchedule: action(async function (scope, options = {}) {
+        const requestAll = () => {
             if (this.requestPromise) {
                 return this.requestPromise
             }
 
-            const promise = (async () => {
-                let date
-
-                try {
-                    date = await scheduleService.getStartingDate(context)
-                } catch (error) {
-                    throw { stage: 'startingDate', error }
-                }
-
-                try {
-                    const data = await scheduleService.getCourseList(context)
-                    return [date, data]
-                } catch (error) {
-                    throw { stage: 'course', error }
-                }
-            })()
+            const promise = Promise.all([
+                scheduleService.getStartingDate(scope),
+                scheduleService.getCourseList(scope),
+            ])
 
             this.requestPromise = promise
 
-            try {
-                return await promise
-            } finally {
+            return promise.finally(() => {
                 this.requestPromise = null
-            }
+            })
         }
 
         if (!options.force && this.courseList) {
@@ -207,9 +204,9 @@ export const scheduleStore = observable({
 
     /**
      * 加载考试时间，带并发去重
-     * @param context 视图层上下文
+     * @param scope 请求作用域
      */
-    loadExamTime: action(async function (context) {
+    loadExamTime: action(async function (scope) {
         if (this.examList !== null) {
             this.examLoad = { status: 'ready', isStale: false }
             return this.examList
@@ -221,7 +218,7 @@ export const scheduleStore = observable({
 
         this.examLoad = { status: 'loading' }
 
-        const promise = scheduleService.fetchExamTime(context)
+        const promise = scheduleService.fetchExamTime(scope)
             .then((data) => {
                 runInAction(() => {
                     this.examList = data || []

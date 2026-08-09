@@ -1,4 +1,5 @@
 import request from '../../utils/request'
+import { RequestScope } from '../../utils/request-scope'
 import { FEEDBACK_INTERVAL_TIME } from '../../constants/index'
 import {
     getTimestampAfterMin, formatTimestamp, isNowMoreThan,
@@ -28,6 +29,11 @@ Component({
             width: 160,
             height: 160,
         },
+    },
+    lifetimes: {
+        created() {
+            this.requestScope = new RequestScope()
+        }
     },
     methods: {
         onReportTap() {
@@ -87,7 +93,8 @@ Component({
                             mask: true,
                         })
 
-                        await request('feedback', this, {
+                        await request('feedback', {
+                            scope: this.requestScope,
                             body: {
                                 code: res.code,
                                 config: `${configBase64} - SubMsg[${reqSubMsgResult}]`,

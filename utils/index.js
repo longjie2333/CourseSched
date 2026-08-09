@@ -211,3 +211,29 @@ export const WarningMessage = (context, selector, content, other) => {
 export const ErrorMessage = (context, selector, content, other) => {
     globalMessage('error', context, selector, content, other)
 }
+/**
+ * 页面层消息提示：优先使用 t-message，无页面上下文时回退 wx.showToast
+ * @param {'info'|'success'|'error'|'warning'} type 消息类型
+ * @param {String} content 消息内容
+ */
+export const showMessage = (type, content) => {
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
+    const context = pages[pages.length - 1]
+
+    if (!context) {
+        wx.showToast({
+            title: content,
+            icon: 'none',
+            duration: 3000,
+        })
+        return
+    }
+
+    Message[type]({
+        context,
+        selector: '#t-message',
+        content,
+        offset: [100, 32],
+        duration: 3000,
+    })
+}

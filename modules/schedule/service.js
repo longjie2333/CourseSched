@@ -1,37 +1,43 @@
-import request from '../../utils/request'
+import request, { AuthRequirement } from '../../utils/request'
 import { buildCourseMap, formatCourseData, genForRenderData } from '../../utils/course'
 
 export const scheduleService = {
     /**
-     * 获取开学日期
-     * @param context 视图层上下文
+     * 获取开学日期（无需认证）
+     * @param scope 请求作用域
      */
-    async getStartingDate(context) {
-        return request('startingdate', context)
+    async getStartingDate(scope) {
+        return request('startingdate', { scope })
     },
 
     /**
      * 获取课表数据
-     * @param context 视图层上下文
+     * @param scope 请求作用域
      */
-    async getCourseList(context) {
-        return request('course', context)
+    async getCourseList(scope) {
+        return request('course', {
+            auth: AuthRequirement.REQUIRED,
+            scope,
+        })
     },
 
     /**
      * 获取考试时间
-     * @param context 视图层上下文
+     * @param scope 请求作用域
      */
-    async getExamTime(context) {
-        return request('examtime', context)
+    async getExamTime(scope) {
+        return request('examtime', {
+            auth: AuthRequirement.REQUIRED,
+            scope,
+        })
     },
 
     /**
      * 获取并按考试节次/周排序考试时间
-     * @param context 视图层上下文
+     * @param scope 请求作用域
      */
-    async fetchExamTime(context) {
-        const data = await this.getExamTime(context)
+    async fetchExamTime(scope) {
+        const data = await this.getExamTime(scope)
 
         return [...(data || [])].sort((a, b) => {
             const periodA = parseInt(a.exam_period)

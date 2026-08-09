@@ -1,102 +1,108 @@
-import request from '../../utils/request'
+import request, { AuthRequirement } from '../../utils/request'
+import { AppError, AppErrorCode } from '../../utils/app-error'
 
 /**
- * 按学期分类成绩数组
- * @param arr 原成绩数组
- * @returns {*[]}
+ * 按学期分组并返回 [{ semester, scores }] 模型
+ * @param scores 原始成绩数组
+ * @returns {Array<{semester: number, scores: *[]}>}
  */
-const groupBySemester = (arr) => {
-    const result = []
+const groupExamScores = (scores) => {
+    const grouped = []
 
-    arr.forEach(item => {
-        const sem = parseInt(item.semester, 10)
+    scores.forEach(score => {
+        const semester = parseInt(score.semester, 10)
 
-        if (isNaN(sem) || sem < 1) {
+        if (isNaN(semester) || semester < 1) {
             return
         }
 
-        const index = sem - 1
-
-        if (!Array.isArray(result[index])) {
-            result[index] = []
-        }
-
-        result[index].push(item)
+        const index = semester - 1
+        const semesterScores = grouped[index] || []
+        semesterScores.push(score)
+        grouped[index] = semesterScores
     })
 
-    return result
+    return Array.from({ length: grouped.length }, (_, index) => ({
+        semester: index + 1,
+        scores: [...(grouped[index] || [])].sort((a, b) => {
+            const na = Number(a.num)
+            const nb = Number(b.num)
+
+            if (Number.isNaN(na)) return 1
+            if (Number.isNaN(nb)) return -1
+
+            return na - nb
+        })
+    }))
 }
 
+const emptyAttendanceStatistics = () => ({
+    late: 0, leave_early: 0, leave: 0,
+    absent: 0, online: 0, official_leave: 0
+})
+
 /**
- * 对分类好的成绩数组按 num 排序
- * @param grouped
- * @returns {*}
+ * 可选列表接口：AUTH/INVALID_DATA 降级为空数组，网络/服务端/取消继续抛出
+ * @param scope 请求作用域
+ * @param path 接口路径
+ * @returns {Promise<*[]>}
  */
-const sortGroupedByNum = (grouped) => {
-    grouped.forEach((semesterArr) => {
-        if (Array.isArray(semesterArr)) {
-            semesterArr.sort((a, b) => {
-                const na = Number(a.num)
-                const nb = Number(b.num)
-
-                if (Number.isNaN(na)) return 1
-                if (Number.isNaN(nb)) return -1
-
-                return na - nb
-            })
+const getOptionalList = async (scope, path) => {
+    try {
+        return await request(path, {
+            auth: AuthRequirement.REQUIRED,
+            scope,
+        }) || []
+    } catch (error) {
+        if (error instanceof AppError && (
+            error.code === AppErrorCode.NETWORK ||
+            error.code === AppErrorCode.SERVER ||
+            error.code === AppErrorCode.CANCELLED
+        )) {
+            throw error
         }
-    })
 
-    return grouped
+        return []
+    }
 }
 
 export const reportService = {
     /**
      * 获取个人信息
-     * @param context 视图层上下文
+     * @param scope 请求作用域
      */
-    async getUserInfo(context) {
-        return request('info?cache', context)
+    async getUserInfo(scope) {
+        return request('info?cache', {
+            auth: AuthRequirement.REQUIRED,
+            scope,
+        })
     },
 
     /**
      * 获取考试成绩
-     * @param context 视图层上下文
+     * @param scope 请求作用域
      */
-    async getExamScore(context) {
-        const data = await request('examscore?cache', context, {
-            skipToast: true,
-            skipFailed: true
-        })
+    async getExamScore(scope) {
+        const data = await getOptionalList(scope, 'examscore?cache')
 
         if (!data) return []
 
-        const grouped = groupBySemester(data)
-        return sortGroupedByNum(grouped)
+        return groupExamScores(data)
     },
 
     /**
      * 获取考勤数据
-     * @param context 视图层上下文
+     * @param scope 请求作用域
      */
-    async getAttendance(context) {
-        const data = await request('attendance?cache', context, {
-            skipToast: true,
-            skipFailed: true
-        })
+    async getAttendance(scope) {
+        const data = await getOptionalList(scope, 'attendance?cache')
 
         if (!data) return {
-            statistics: {
-                late: 0, leave_early: 0, leave: 0,
-                absent: 0, online: 0, official_leave: 0
-            },
+            statistics: emptyAttendanceStatistics(),
             data: []
         }
 
-        const statistics = {
-            late: 0, leave_early: 0, leave: 0,
-            absent: 0, online: 0, official_leave: 0
-        }
+        const statistics = emptyAttendanceStatistics()
 
         data.forEach(item => {
             statistics.late += Number(item.late) || 0
@@ -112,12 +118,9 @@ export const reportService = {
 
     /**
      * 获取请假记录
-     * @param context 视图层上下文
+     * @param scope 请求作用域
      */
-    async getLeaveHistory(context) {
-        return request('leavehistory?cache', context, {
-            skipToast: true,
-            skipFailed: true
-        }) || []
+    async getLeaveHistory(scope) {
+        return getOptionalList(scope, 'leavehistory?cache')
     }
 }

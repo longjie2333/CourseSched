@@ -1,4 +1,5 @@
-import request from '../../utils/request'
+import request, { RequestMethod } from '../../utils/request'
+import { RequestScope } from '../../utils/request-scope'
 import Dialog from 'tdesign-miniprogram/dialog'
 import { commonStore } from '../../modules/common/store'
 
@@ -14,6 +15,7 @@ Component({
     },
     lifetimes: {
         created() {
+            this.requestScope = new RequestScope()
             this.getNotice()
         },
         ready() {
@@ -26,9 +28,9 @@ Component({
                 const noRemind = commonStore.NoticeMarkRead
 
                 try {
-                    const { dialog } = await request('notice', this, {
-                        method: 'GET',
-                        skipToast: true
+                    const { dialog } = await request('notice', {
+                        method: RequestMethod.GET,
+                        scope: this.requestScope,
                     })
 
                     if (dialog) {
