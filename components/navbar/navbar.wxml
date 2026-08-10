@@ -1,4 +1,4 @@
-<t-navbar>
+<t-navbar placeholder>
     <view
         slot="left"
         class="navbar-toolbar"

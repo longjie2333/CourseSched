@@ -1,5 +1,5 @@
-import { SEMESTER_WEEKS, WEEK_TITLES, TIME_TITLES } from '../constants/index'
-import { nextDate, getColor } from './index'
+import { SEMESTER_WEEKS, WEEK_TITLES, TIME_TITLES } from '../../constants/index'
+import { nextDate, getColor } from '../../utils/index'
 
 /**
  * 判断当周是否属于周数范围
