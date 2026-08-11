@@ -12,6 +12,7 @@ Component({
         _dialogConfig: {},
         _canShowDialog: false,
         _noticeNoRemind: false,
+        _noticePubdate: '',
     },
     lifetimes: {
         created() {
@@ -34,15 +35,15 @@ Component({
                     })
 
                     if (dialog) {
+                        const { pubdate, ...dialogConfig } = dialog
                         this.setData({
                             _dialogConfig: {
                                 context: this,
-                                closeOnOverlayClick: true,
-                                confirmBtn: '确定',
-                                ...dialog
+                                ...dialogConfig
                             },
                             _canShowDialog: true,
-                            _noticeNoRemind: dialog.pubdate === noRemind,
+                            _noticePubdate: pubdate,
+                            _noticeNoRemind: pubdate === noRemind,
                         })
                     }
                 } catch (err) {
@@ -51,7 +52,7 @@ Component({
             }, 10)
         },
         showDialog() {
-            const { _dialogConfig, _canShowDialog, _noticeNoRemind } = this.data
+            const { _dialogConfig, _canShowDialog, _noticeNoRemind, _noticePubdate } = this.data
 
             setTimeout(() => {
                 if (_noticeNoRemind) {
@@ -61,7 +62,7 @@ Component({
                 if (_canShowDialog) {
                     Dialog.confirm(_dialogConfig)
                         .then(() => {
-                            commonStore.markNoticeRead(_dialogConfig.pubdate)
+                            commonStore.markNoticeRead(_noticePubdate)
                         })
                 }
             })

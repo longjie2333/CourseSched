@@ -46,7 +46,7 @@ Component({
             const { feedbackContact, feedbackContent, feedbackFiles } = this.data
             const nextFeedbackTime = commonStore.FeedbackNextTick
 
-            if (feedbackContent === '') {
+            if (!feedbackContent.trim()) {
                 return InfoMessage(this, '#feedback-message', '请先填写反馈内容')
             }
 
@@ -59,8 +59,9 @@ Component({
             const configBase64 = CryptoJS.enc.Base64.stringify(wordArr)
             const files = feedbackFiles.map((file) => {
                 const filePath = file.url
-                const fileSuffix = file.name.split('.').slice(-1)[0]
-                const baseFormat = `data:image/${fileSuffix};base64,`
+                const fileSuffix = file.name.split('.').slice(-1)[0].toLowerCase()
+                const imageType = fileSuffix === 'jpg' ? 'jpeg' : fileSuffix
+                const baseFormat = `data:image/${imageType};base64,`
                 const base64 = wx.getFileSystemManager().readFileSync(filePath, 'base64')
 
                 return baseFormat + base64
@@ -74,7 +75,6 @@ Component({
             })
 
             const errorReport = getErrorReport()
-            const contentWithReport = `${feedbackContent}\n\n--- 自动诊断信息 ---\n${errorReport}`
             const tmplId = '1d64jYWoWcsubULXUEqCXPrzblA_AoUAcmXVwzp-Tp0'
             const reqSubMsg = await wx.requestSubscribeMessage({
                 tmplIds: [tmplId],
@@ -97,9 +97,11 @@ Component({
                             scope: this.requestScope,
                             body: {
                                 code: res.code,
-                                config: `${configBase64} - SubMsg[${reqSubMsgResult}]`,
+                                config: configBase64,
                                 contact: feedbackContact,
-                                content: contentWithReport,
+                                content: feedbackContent,
+                                report: errorReport,
+                                answer: reqSubMsgResult === 'accept',
                                 files,
                             }
                         })
