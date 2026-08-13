@@ -11,7 +11,6 @@ Component({
     properties: {},
     data: {
         _dialogConfig: {},
-        _canShowDialog: false,
         _noticeNoRemind: false,
         _noticePubdate: '',
     },
@@ -19,13 +18,12 @@ Component({
         created() {
             this.requestScope = new RequestScope()
             this.getNotice()
-        },
-        ready() {
-            this.showDialog()
         }
     },
     methods: {
         getNotice() {
+            const that = this
+
             setTimeout(async () => {
                 const noRemind = commonStore.NoticeMarkRead
 
@@ -43,30 +41,29 @@ Component({
                                 context: this,
                                 ...dialogConfig
                             },
-                            _canShowDialog: true,
                             _noticePubdate: pubdate,
                             _noticeNoRemind: pubdate === noRemind,
                         })
                     }
+
+                    that.showDialog()
                 } catch (err) {
 
                 }
             }, 10)
         },
         showDialog() {
-            const { _dialogConfig, _canShowDialog, _noticeNoRemind, _noticePubdate } = this.data
+            const { _dialogConfig, _noticeNoRemind, _noticePubdate } = this.data
 
             setTimeout(() => {
                 if (_noticeNoRemind) {
                     return
                 }
 
-                if (_canShowDialog) {
-                    Dialog.confirm(_dialogConfig)
-                        .then(() => {
-                            commonStore.markNoticeRead(_noticePubdate)
-                        })
-                }
+                Dialog.confirm(_dialogConfig)
+                  .then(() => {
+                      commonStore.markNoticeRead(_noticePubdate)
+                  })
             })
         }
     }

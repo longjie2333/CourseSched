@@ -21,6 +21,7 @@ page {
     border-radius: var(--td-radius-default);
     font-size: small;
     text-align: center;
+    line-height: initial;
 }
 
 .weekRow .today {
@@ -46,8 +47,4 @@ page {
 
 .t-tabs__item-inner {
     border-radius: var(--td-tag-square-border-radius, 8rpx)!important;
-}
-
-.t-tabs view {
-    line-height: initial;
 }
