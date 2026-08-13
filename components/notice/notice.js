@@ -2,6 +2,7 @@ import request, { RequestMethod } from '../../utils/request'
 import { RequestScope } from '../../utils/request-scope'
 import Dialog from 'tdesign-miniprogram/dialog'
 import { commonStore } from '../../modules/common/store'
+import env from '../../env'
 
 Component({
     options: {
@@ -30,6 +31,7 @@ Component({
 
                 try {
                     const { dialog } = await request('notice', {
+                        baseUrl: env.opt,
                         method: RequestMethod.GET,
                         scope: this.requestScope,
                     })

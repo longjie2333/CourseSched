@@ -11,6 +11,7 @@ import {
 import { authStore } from '../../modules/auth/store'
 import { commonStore } from '../../modules/common/store'
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
+import env from '../../env'
 
 Component({
     properties: {
@@ -94,6 +95,7 @@ Component({
                         })
 
                         await request('feedback', {
+                            baseUrl: env.opt,
                             scope: this.requestScope,
                             body: {
                                 code: res.code,
@@ -108,8 +110,6 @@ Component({
 
                         this.displayFeedbackDialog()
 
-                        wx.hideLoading()
-
                         SuccessMessage(this, '#feedback-message', '感谢您的反馈')
 
                         commonStore.setFeedbackNextTick(getTimestampAfterMin(FEEDBACK_INTERVAL_TIME))
@@ -117,6 +117,8 @@ Component({
                         clearErrorLogs()
                     } catch (err) {
                         ErrorMessage(this, '#feedback-message', '关键时刻出问题，反馈失败了')
+                    } finally {
+                        wx.hideLoading()
                     }
                 }
             })

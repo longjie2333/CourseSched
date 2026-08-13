@@ -22,6 +22,7 @@ export const AuthRequirement = {
 }
 
 const DEFAULT_OPTIONS = {
+    baseUrl: env.api,
     method: RequestMethod.POST,
     auth: AuthRequirement.NONE,
     body: {},
@@ -40,7 +41,7 @@ const DEFAULT_OPTIONS = {
  * @returns {Promise<any>}
  */
 export default function request(path, options = {}) {
-    const { method, auth, body, headers, timeout, scope } = { ...DEFAULT_OPTIONS, ...options }
+    const { baseUrl, method, auth, body, headers, timeout, scope } = { ...DEFAULT_OPTIONS, ...options }
 
     if (scope && scope.isAborted) {
         return Promise.reject(
@@ -72,12 +73,11 @@ export default function request(path, options = {}) {
             reject(error)
         }
 
+        const url = `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
         const task = wx.request({
-            url: `${(env.api || '').replace(/\/$/, '')}/${path.replace(/^\//, '')}`,
-            method,
+            url, method, timeout,
             header: requestHeaders,
             data: requestBody,
-            timeout,
             success: (response) => {
                 if (scope) {
                     scope.release(task)
