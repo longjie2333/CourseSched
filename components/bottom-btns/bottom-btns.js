@@ -5,9 +5,7 @@ import {
     getTimestampAfterMin, formatTimestamp, isNowMoreThan,
     InfoMessage, SuccessMessage, ErrorMessage
 } from '../../utils/index'
-import {
-    addRealtimeFilterMsg, clearErrorLogs, collectBreadcrumb, getErrorReport
-} from '../../utils/error-logger'
+import { clearErrorLogs, getErrorReport } from '../../utils/error-logger'
 import { authStore } from '../../modules/auth/store'
 import { commonStore } from '../../modules/common/store'
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
@@ -68,13 +66,6 @@ Component({
                 return baseFormat + base64
             })
 
-            addRealtimeFilterMsg('feedback')
-            collectBreadcrumb('feedback_confirm', {
-                hasContact: Boolean(feedbackContact),
-                contentLength: feedbackContent.length,
-                fileCount: files.length,
-            })
-
             const errorReport = getErrorReport()
             const tmplId = '1d64jYWoWcsubULXUEqCXPrzblA_AoUAcmXVwzp-Tp0'
             const reqSubMsg = await wx.requestSubscribeMessage({
@@ -113,7 +104,6 @@ Component({
                         SuccessMessage(this, '#feedback-message', '感谢您的反馈')
 
                         commonStore.setFeedbackNextTick(getTimestampAfterMin(FEEDBACK_INTERVAL_TIME))
-                        collectBreadcrumb('feedback_success')
                         clearErrorLogs()
                     } catch (err) {
                         ErrorMessage(this, '#feedback-message', '关键时刻出问题，反馈失败了')

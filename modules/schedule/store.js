@@ -1,7 +1,6 @@
 import { action, observable, runInAction } from 'mobx-miniprogram'
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
 import { AppError, AppErrorCode } from '../../utils/app-error'
-import { collectBreadcrumb } from '../../utils/error-logger'
 import { getTimestampAfterDays } from '../../utils/index'
 import { STORE_KEY, UPDATE_INTERVAL_TIME } from '../../constants/index'
 import { scheduleService } from './service'
@@ -94,11 +93,6 @@ export const scheduleStore = observable({
 
         this.className = courseListResponse.clas
         this.courseList = renderData
-        collectBreadcrumb('course_render_ready', {
-            detailLength: courseListResponse.detail.length,
-            renderDataLength: renderData.length,
-            startingDate: this.startingDate,
-        })
     }),
 
     /**
