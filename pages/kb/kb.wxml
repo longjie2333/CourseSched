@@ -302,6 +302,11 @@
     </t-tab-panel>
 </t-tabs>
 
+<view class="risk">
+  <t-icon name="error-circle"/>
+  <view>非学校官方平台，仅供学习使用</view>
+</view>
+
 <bottom-btns
     ifVacation="{{ isVacation }}"
     bind:onReportTap="navigateToReport"

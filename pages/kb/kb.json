@@ -4,6 +4,7 @@
         "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
         "t-sticky": "tdesign-miniprogram/sticky/sticky",
         "t-message": "tdesign-miniprogram/message/message",
+        "t-icon": "tdesign-miniprogram/icon/icon",
         "navbar": "/components/navbar/navbar",
         "course-grid": "/components/course-grid/course-grid",
         "exam-time-grid": "/components/exam-time-grid/exam-time-grid",
