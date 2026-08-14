@@ -1,6 +1,7 @@
 import { reaction } from 'mobx-miniprogram'
 import { createStoreBindings } from 'mobx-miniprogram-bindings'
 import { authStore } from '../../modules/auth/store'
+import { commonStore } from '../../modules/common/store'
 import { EXAM_WEEKS, VACATION_FROM, VACATION_TO } from '../../constants/index'
 import { showMessage, getThisDate, getThisWeeks } from '../../utils/index'
 import { RequestScope } from '../../utils/request-scope'
@@ -124,7 +125,12 @@ Page({
         })
 
         if (isVacation) {
-            this.navigateToReport()
+            const period = weeks >= VACATION_FROM ? 'after' : 'before'
+            const vacationKey = `${period}:${scheduleStore.startingDate}`
+
+            if (vacationKey !== commonStore.ReportAutoShown && this.navigateToReport()) {
+                commonStore.markReportAutoShown(vacationKey)
+            }
         }
     },
     async refreshSchedule(options = {}) {
@@ -272,18 +278,21 @@ Page({
         await this.loadExamTime(this.requestScope)
     },
     navigateToReport() {
-        if (dontNavToPage) return
+        if (dontNavToPage) return false
 
-        if (scheduleStore.scheduleLoad.status === 'error') return
+        if (scheduleStore.scheduleLoad.status === 'error') return false
 
         if (!authStore.hasSession) {
             showMessage('info', '请先填写学号和密码，以便查看学期报告')
-            return this.displayLoginDialog()
+            this.displayLoginDialog()
+            return false
         }
 
         wx.navigateTo({
             url: '/pages/report/report?isVacation=' + this.data.isVacation
         })
+
+        return true
     },
     navigateToSubCalendar() {
         wx.navigateTo({

@@ -1,7 +1,7 @@
 import { action, observable } from 'mobx-miniprogram'
 import { STORE_KEY } from '../../constants/index'
 
-const PERSIST_KEYS = ['FeedbackNextTick', 'NoticeMarkRead']
+const PERSIST_KEYS = ['FeedbackNextTick', 'NoticeMarkRead', 'ReportAutoShown']
 
 const readPersistedState = () => {
     const stored = wx.getStorageSync(STORE_KEY.COMMON)
@@ -14,6 +14,7 @@ const persisted = readPersistedState()
 export const commonStore = observable({
     FeedbackNextTick: persisted.FeedbackNextTick || 0,
     NoticeMarkRead: persisted.NoticeMarkRead || 0,
+    ReportAutoShown: persisted.ReportAutoShown || '',
 
     persist: action(function () {
         const data = {}
@@ -30,6 +31,11 @@ export const commonStore = observable({
         this.persist()
     }),
 
+    markReportAutoShown: action(function (vacationKey) {
+        this.ReportAutoShown = vacationKey
+        this.persist()
+    }),
+
     setFeedbackNextTick: action(function (timestamp) {
         this.FeedbackNextTick = timestamp
         this.persist()
@@ -38,6 +44,7 @@ export const commonStore = observable({
     clear: action(function () {
         this.FeedbackNextTick = 0
         this.NoticeMarkRead = 0
+        this.ReportAutoShown = ''
         wx.removeStorageSync(STORE_KEY.COMMON)
     }),
 })
