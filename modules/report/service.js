@@ -74,8 +74,9 @@ export const reportService = {
         }
 
         const statistics = emptyAttendanceStatistics()
+        const detail = data.detail || []
 
-        data.forEach(item => {
+        detail.forEach(item => {
             statistics.late += Number(item.late) || 0
             statistics.leave_early += Number(item.leave_early) || 0
             statistics.leave += Number(item.leave) || 0
@@ -84,7 +85,7 @@ export const reportService = {
             statistics.official_leave += Number(item.official_leave) || 0
         })
 
-        return { statistics, data }
+        return { statistics, data: detail }
     },
 
     /**

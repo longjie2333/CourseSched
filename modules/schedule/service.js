@@ -38,8 +38,9 @@ export const scheduleService = {
      */
     async fetchExamTime(scope) {
         const data = await this.getExamTime(scope)
+        const detail = (data && data.detail) || []
 
-        return [...(data || [])].sort((a, b) => {
+        return [...detail].sort((a, b) => {
             const periodA = parseInt(a.exam_period)
             const periodB = parseInt(b.exam_period)
 
