@@ -1,8 +1,10 @@
 import { reaction } from 'mobx-miniprogram'
 import { createStoreBindings } from 'mobx-miniprogram-bindings'
-import { WEEK_TITLES } from '../../constants/index'
+import { EXAM_WEEKS, VACATION_FROM, VACATION_TO, WEEK_TITLES } from '../../constants/index'
+import { scheduleStore } from '../../modules/schedule/store'
 import { reportStore } from '../../modules/report/store'
 import { RequestScope } from '../../utils/request-scope'
+import { getThisWeeks } from '../../utils/index'
 
 const emptyInfo = { sid: '', name: '', department: '', class: '', avatar: '' }
 const emptyAttendanceStatistics = { late: 0, leave_early: 0, leave: 0, absent: 0, online: 0, official_leave: 0 }
@@ -15,12 +17,12 @@ Page({
         leaveHistory: null,
         reportLoad: { status: 'idle' },
         weekTitles: WEEK_TITLES,
-        isVacation: false,
-        currSemester: 0,
+        currSemester: -1,
+        displayedSemesterNumber: 0,
+        currentExamEmptyText: '',
         show_leave_history_more: false,
         reportTitle: '你哪个班的？',
         reportInfo: emptyInfo,
-        semesterReports: [],
         currentExamScores: [],
         attendanceStatistics: emptyAttendanceStatistics,
         attendanceRecords: [],
@@ -48,10 +50,6 @@ Page({
             }
         })
 
-        this.setData({
-            isVacation: (query.isVacation || '').toLowerCase() === 'true',
-        })
-
         this.disposeDerivedReaction = reaction(
             () => [
                 reportStore.info,
@@ -59,6 +57,7 @@ Page({
                 reportStore.attendance,
                 reportStore.leaveHistory,
                 reportStore.reportLoad,
+                scheduleStore.startingDate,
             ],
             () => {
                 this.refreshDerived()
@@ -80,20 +79,6 @@ Page({
             this.storeBindings.destroyStoreBindings()
         }
     },
-    buildSemesterReports(scores) {
-        if (this.data.isVacation) {
-            return Array.isArray(scores) ? scores : []
-        }
-
-        const list = Array.isArray(scores) ? scores : []
-        const last = list[list.length - 1]
-        const lastSemester = (last && last.semester) || 0
-
-        return [
-            ...list,
-            { semester: lastSemester + 1, scores: [] }
-        ]
-    },
     getErrorMessage(error) {
         const message = error && error.errMsg
             ? error.errMsg
@@ -106,9 +91,18 @@ Page({
         return message.includes('request:fail') ? '网络异常' : message
     },
     refreshDerived() {
-        const { info, examScore, attendance, leaveHistory, reportLoad } = reportStore
-        const semesterReports = this.buildSemesterReports(examScore)
-        const currentSemesterIndex = Math.min(this.data.currSemester, Math.max(semesterReports.length - 1, 0))
+        const { info, examScore, attendance, leaveHistory, reportLoad, currentSemesterNumber } = reportStore
+        const semesterReports = Array.isArray(examScore) ? examScore : []
+        const lastSemesterIndex = Math.max(semesterReports.length - 1, 0)
+        const autoSemesterIndex = this.getDefaultSemesterIndex()
+        const currentSemesterIndex = this.data.currSemester >= 0
+            ? Math.min(this.data.currSemester, lastSemesterIndex)
+            : autoSemesterIndex
+        const currentSemester = semesterReports[currentSemesterIndex] || {}
+        const currentExamScores = currentSemester.scores || []
+        const currentWeeks = scheduleStore.startingDate ? getThisWeeks(scheduleStore.startingDate) : null
+        const isCurrentSemester = currentSemesterNumber === currentSemester.semester
+        const isExamWeek = typeof currentWeeks === 'number' && EXAM_WEEKS.includes(currentWeeks)
         const attendanceStatistics = (attendance && attendance.statistics) || emptyAttendanceStatistics
         const attendanceRecords = ((attendance && attendance.data) || []).map(item => ({
             ...item,
@@ -119,8 +113,15 @@ Page({
         this.setData({
             reportTitle: (info && info.class) || '你哪个班的？',
             reportInfo: info || emptyInfo,
-            semesterReports,
-            currentExamScores: (semesterReports[currentSemesterIndex] || {}).scores || [],
+            displayedSemesterNumber: autoSemesterIndex + 1,
+            currentExamScores,
+            currentExamEmptyText: currentExamScores.length === 0
+                ? isCurrentSemester
+                    ? isExamWeek
+                        ? '正在阅卷评分中'
+                        : '这学期还未开始考试'
+                    : '该学期暂无成绩记录'
+                : '',
             attendanceStatistics,
             attendanceRecords,
             leaveRecords,
@@ -128,25 +129,40 @@ Page({
             loadErrorMessage: reportLoad.status === 'error' ? this.getErrorMessage(reportLoad.error) : '',
         })
     },
+    getDefaultSemesterIndex() {
+        const currentWeeks = scheduleStore.startingDate ? getThisWeeks(scheduleStore.startingDate) : null
+        const isVacation = typeof currentWeeks === 'number' &&
+            (currentWeeks >= VACATION_FROM || currentWeeks < VACATION_TO)
+
+        if (isVacation) {
+            const semesterReports = Array.isArray(reportStore.examScore) ? reportStore.examScore : []
+
+            for (let index = semesterReports.length - 1; index >= 0; index--) {
+                if ((semesterReports[index].scores || []).length > 0) {
+                    return index
+                }
+            }
+
+            return 0
+        }
+
+        return Math.max((reportStore.currentSemesterNumber || 1) - 1, 0)
+    },
     async getSemesterReport() {
         if (reportStore.reportLoad.status === 'loading') {
             return
         }
 
         this.setData({
-            currSemester: 0,
+            currSemester: -1,
             show_leave_history_more: false,
         })
 
         await this.loadReport(this.requestScope)
 
-        if (reportStore.examScore) {
-            const semesterReports = this.buildSemesterReports(reportStore.examScore)
-
-            this.setData({
-                currSemester: Math.max(semesterReports.length - 1, 0),
-            })
-        }
+        this.setData({
+            currSemester: this.getDefaultSemesterIndex(),
+        })
 
         this.refreshDerived()
     },
@@ -154,7 +170,7 @@ Page({
         this.getSemesterReport()
     },
     onChangeSemester(e) {
-        const { index } = e.target.dataset
+        const index = Number(e.target.dataset.index)
 
         this.setData({
             currSemester: index,

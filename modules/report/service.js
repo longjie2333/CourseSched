@@ -1,40 +1,6 @@
 import request, { AuthRequirement } from '../../utils/request'
 import { AppError, AppErrorCode } from '../../utils/app-error'
-
-/**
- * 按学期分组并返回 [{ semester, scores }] 模型
- * @param scores 原始成绩数组
- * @returns {Array<{semester: number, scores: *[]}>}
- */
-const groupExamScores = (scores) => {
-    const grouped = []
-
-    scores.forEach(score => {
-        const semester = parseInt(score.semester, 10)
-
-        if (isNaN(semester) || semester < 1) {
-            return
-        }
-
-        const index = semester - 1
-        const semesterScores = grouped[index] || []
-        semesterScores.push(score)
-        grouped[index] = semesterScores
-    })
-
-    return Array.from({ length: grouped.length }, (_, index) => ({
-        semester: index + 1,
-        scores: [...(grouped[index] || [])].sort((a, b) => {
-            const na = Number(a.num)
-            const nb = Number(b.num)
-
-            if (Number.isNaN(na)) return 1
-            if (Number.isNaN(nb)) return -1
-
-            return na - nb
-        })
-    }))
-}
+import { getCurrentSemesterNumber, groupExamScores } from './util'
 
 const emptyAttendanceStatistics = () => ({
     late: 0, leave_early: 0, leave: 0,
@@ -72,22 +38,27 @@ export const reportService = {
      * @param scope 请求作用域
      */
     async getUserInfo(scope) {
-        return request('info?cache', {
+        const info = await request('info?cache', {
             auth: AuthRequirement.REQUIRED,
             scope,
         })
+
+        return {
+            ...info,
+            currentSemesterNumber: getCurrentSemesterNumber(info.semester, info.grade),
+        }
     },
 
     /**
      * 获取考试成绩
      * @param scope 请求作用域
      */
-    async getExamScore(scope) {
+    async getExamScore(scope, currentSemesterNumber) {
         const data = await getOptionalList(scope, 'examscore?cache')
 
         if (!data) return []
 
-        return groupExamScores(data)
+        return groupExamScores(data, currentSemesterNumber)
     },
 
     /**

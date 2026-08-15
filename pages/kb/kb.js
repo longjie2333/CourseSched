@@ -289,7 +289,7 @@ Page({
         }
 
         wx.navigateTo({
-            url: '/pages/report/report?isVacation=' + this.data.isVacation
+            url: '/pages/report/report'
         })
 
         return true

@@ -3,6 +3,7 @@ import { reportService } from './service'
 
 export const reportStore = observable({
     info: null,
+    currentSemesterNumber: null,
     examScore: null,
     attendance: null,
     leaveHistory: null,
@@ -25,6 +26,7 @@ export const reportStore = observable({
         }
 
         this.info = null
+        this.currentSemesterNumber = null
         this.examScore = null
         this.attendance = null
         this.leaveHistory = null
@@ -36,6 +38,7 @@ export const reportStore = observable({
 
             runInAction(() => {
                 this.info = info
+                this.currentSemesterNumber = info.currentSemesterNumber
             })
 
             // 2. 其余接口并行加载，各自完成后立即写入对应字段，分区展示
@@ -57,7 +60,7 @@ export const reportStore = observable({
             )
 
             await Promise.all([
-                guard(reportService.getExamScore(scope), (value) => {
+                guard(reportService.getExamScore(scope, info.currentSemesterNumber), (value) => {
                     this.examScore = value
                 }),
                 guard(reportService.getAttendance(scope), (value) => {
@@ -92,6 +95,7 @@ export const reportStore = observable({
 
     clear: action(function () {
         this.info = null
+        this.currentSemesterNumber = null
         this.examScore = null
         this.attendance = null
         this.leaveHistory = null

@@ -33,7 +33,7 @@
                     animation="gradient"
                     row-col="{{ welcomeExamRowCol }}"
                 />
-                <view wx:else>您已在江职院中熬过 {{ semesterReports.length }} 个学期啦！</view>
+                <view wx:else>这是你在江职院的第 {{ displayedSemesterNumber }} 个学期啦！</view>
             </view>
         </view>
     </view>
@@ -46,13 +46,12 @@
                     <t-tag
                         size="large"
                         variant="light"
-                        class="exam-score-semester {{ currSemester === semester ? 'exam-score-activate' : '' }}"
-                        data-index="{{ semester }}"
-                        wx:for="{{ semesterReports }}"
-                        wx:key="index"
-                        wx:for-index="semester"
+                        class="exam-score-semester {{ currSemester === index ? 'exam-score-activate' : '' }}"
+                        data-index="{{ index }}"
+                        wx:for="{{ examScore }}"
+                        wx:key="semester"
                         bind:tap="onChangeSemester"
-                    >{{ semester + 1 }}</t-tag>
+                    >{{ index + 1 }}</t-tag>
                 </view>
             </view>
             <view class="report-card-head-desc">这个学期你考了这些科目</view>
@@ -84,7 +83,7 @@
                     class="result-title"
                 >无成绩</view>
                 <view slot="description">
-                    <view>这学期还未开始考试捏</view>
+                    <view>{{ currentExamEmptyText }}</view>
                 </view>
             </t-result>
         </view>
