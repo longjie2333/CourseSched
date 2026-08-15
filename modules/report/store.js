@@ -5,6 +5,7 @@ export const reportStore = observable({
     info: null,
     examScore: null,
     attendance: null,
+    attendanceCache: {},
     leaveHistory: null,
     reportLoad: { status: 'idle' },
     requestPromise: null,
@@ -91,15 +92,29 @@ export const reportStore = observable({
     }),
 
     /**
-     * 按学期加载考勤，切换学期标签时调用
+     * 按学期加载考勤，切换学期标签时调用；已查询过的学期直接返回缓存，不再重复请求
      * @param scope 请求作用域
      * @param semester 学期查询参数，如 2024/2025(1)
      * @returns {Promise<*>} 考勤数据 { statistics, data, semester }
      */
     loadAttendance: action(async function (scope, semester) {
+        const cached = semester ? this.attendanceCache[semester] : null
+
+        if (cached) {
+            runInAction(() => {
+                this.attendance = cached
+            })
+
+            return cached
+        }
+
         const data = await reportService.getAttendance(scope, semester)
 
         runInAction(() => {
+            if (semester) {
+                this.attendanceCache[semester] = data
+            }
+
             this.attendance = data
         })
 
@@ -110,6 +125,7 @@ export const reportStore = observable({
         this.info = null
         this.examScore = null
         this.attendance = null
+        this.attendanceCache = {}
         this.leaveHistory = null
         this.reportLoad = { status: 'idle' }
     }),
