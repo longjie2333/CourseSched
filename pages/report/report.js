@@ -21,6 +21,7 @@ Page({
         displayedSemesterNumber: 0,
         currentExamEmptyText: '',
         show_leave_history_more: false,
+        show_attendance_more: false,
         reportTitle: '你哪个班的？',
         reportInfo: emptyInfo,
         semesterReports: [],
@@ -29,6 +30,7 @@ Page({
         attendanceRecords: [],
         leaveRecords: [],
         leaveHistoryStyle: '20000px',
+        attendanceBoxStyle: '20000px',
         loadErrorMessage: '',
         welcomeInfoRowCol: [{ width: '45%', height: '20px' }],
         welcomeExamRowCol: [{ width: '80%', height: '20px' }],
@@ -171,6 +173,7 @@ Page({
             attendanceRecords,
             leaveRecords,
             leaveHistoryStyle: (!this.data.show_leave_history_more && leaveRecords.length > 3) ? '300px' : '20000px',
+            attendanceBoxStyle: (!this.data.show_attendance_more && attendanceRecords.length > 3) ? '300px' : '20000px',
             loadErrorMessage: reportLoad.status === 'error' ? this.getErrorMessage(reportLoad.error) : '',
         })
     },
@@ -201,6 +204,7 @@ Page({
         this.setData({
             currSemester: -1,
             show_leave_history_more: false,
+            show_attendance_more: false,
         })
 
         await this.loadReport(this.requestScope)
@@ -230,6 +234,13 @@ Page({
     showLeaveHistory() {
         this.setData({
             show_leave_history_more: !this.data.show_leave_history_more,
+        })
+
+        this.refreshDerived()
+    },
+    showAttendanceMore() {
+        this.setData({
+            show_attendance_more: !this.data.show_attendance_more,
         })
 
         this.refreshDerived()

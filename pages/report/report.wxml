@@ -38,22 +38,35 @@
         </view>
     </view>
 
+    <view class="semester-selector-bar">
+        <t-tag
+            size="large"
+            variant="light"
+            class="semester-selector-prefix"
+        >选择第</t-tag>
+
+        <view class="semester-selector-options">
+            <t-tag
+                size="large"
+                variant="light"
+                class="exam-score-semester {{ currSemester === index ? 'exam-score-activate' : '' }}"
+                data-index="{{ index }}"
+                wx:for="{{ semesterReports }}"
+                wx:key="semester"
+                bind:tap="onChangeSemester"
+            >{{ index + 1 }}</t-tag>
+        </view>
+
+        <t-tag
+            size="large"
+            variant="light"
+            class="semester-selector-suffix"
+        >学期</t-tag>
+    </view>
+
     <view class="report-card-container">
         <view class="report-card-head">
-            <view class="report-card-head-title">
-                考试成绩
-                <view class="exam-score-semester-bar">
-                    <t-tag
-                        size="large"
-                        variant="light"
-                        class="exam-score-semester {{ currSemester === index ? 'exam-score-activate' : '' }}"
-                        data-index="{{ index }}"
-                        wx:for="{{ semesterReports }}"
-                        wx:key="semester"
-                        bind:tap="onChangeSemester"
-                    >{{ index + 1 }}</t-tag>
-                </view>
-            </view>
+            <view class="report-card-head-title">考试成绩</view>
             <view class="report-card-head-desc">这个学期你考了这些科目</view>
         </view>
 
@@ -208,32 +221,45 @@
 
             <t-divider class="divider" content="考勤详情" align="center"/>
 
-            <t-steps
-                readonly
-                theme="dot"
-                layout="vertical"
-                class="attendance-box"
-                current="{{ attendanceRecords.length }}"
+            <view
+                class="attendance-box-wrap"
+                style="max-height: {{ attendanceBoxStyle }};"
             >
-                <t-step-item
-                    class="attendance-item"
-                    title="{{ item.course_name }}"
-                    wx:for="{{ attendanceRecords }}"
-                    wx:key="index"
+                <t-steps
+                    readonly
+                    theme="dot"
+                    layout="vertical"
+                    class="attendance-box"
+                    current="{{ attendanceRecords.length }}"
                 >
-                    <view slot="content">
-                        <view class="attendance-content">
-                            <t-tag wx:if="{{ item.late === '1' }}" variant="light" shape="round">迟到</t-tag>
-                            <t-tag wx:if="{{ item.leave_early === '1' }}" variant="light" shape="round">早退</t-tag>
-                            <t-tag wx:if="{{ item.leave === '1' }}" variant="light" shape="round">请假</t-tag>
-                            <t-tag wx:if="{{ item.absent === '1' }}" variant="light" shape="round">旷课</t-tag>
-                            <t-tag wx:if="{{ item.online === '1' }}" variant="light" shape="round">网上到课</t-tag>
-                            <t-tag wx:if="{{ item.official_leave === '1' }}" variant="light" shape="round">请公假</t-tag>
-                            <view>第 {{ item.weeks }} 周，周{{ weekTitles[item.week] }}，第 {{item.period}} 节课</view>
+                    <t-step-item
+                        class="attendance-item"
+                        title="{{ item.course_name }}"
+                        wx:for="{{ attendanceRecords }}"
+                        wx:key="index"
+                    >
+                        <view slot="content">
+                            <view class="attendance-content">
+                                <t-tag wx:if="{{ item.late === '1' }}" variant="light" shape="round">迟到</t-tag>
+                                <t-tag wx:if="{{ item.leave_early === '1' }}" variant="light" shape="round">早退</t-tag>
+                                <t-tag wx:if="{{ item.leave === '1' }}" variant="light" shape="round">请假</t-tag>
+                                <t-tag wx:if="{{ item.absent === '1' }}" variant="light" shape="round">旷课</t-tag>
+                                <t-tag wx:if="{{ item.online === '1' }}" variant="light" shape="round">网上到课</t-tag>
+                                <t-tag wx:if="{{ item.official_leave === '1' }}" variant="light" shape="round">请公假</t-tag>
+                                <view>第 {{ item.weeks }} 周，周{{ weekTitles[item.week] }}，第 {{item.period}} 节课</view>
+                            </view>
                         </view>
-                    </view>
-                </t-step-item>
-            </t-steps>
+                    </t-step-item>
+                </t-steps>
+
+                <view
+                    class="attendance-box-more"
+                    wx:if="{{ !show_attendance_more && attendanceRecords.length > 3 }}"
+                    bind:tap="showAttendanceMore"
+                >
+                    <view>查看更多</view>
+                </view>
+            </view>
         </view>
     </view>
 

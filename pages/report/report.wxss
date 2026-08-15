@@ -89,19 +89,46 @@
     color: var(--td-text-color-secondary);
 }
 
-.exam-score-semester-bar {
+.semester-selector-bar,
+.semester-selector-bar .semester-selector-options {
     display: flex;
     gap: 5px;
+}
+
+.semester-selector-bar {
+    align-items: center;
+    margin-top: 10px;
+    padding: 0 20px;
+}
+
+.semester-selector-bar .semester-selector-prefix {
+    flex: 1;
+    width: max-content;
+    display: flex;
+    justify-content: end;
+}
+
+.semester-selector-bar .semester-selector-suffix {
+    width: max-content;
+}
+
+.semester-selector-bar .semester-selector-options {
+    overflow-x: auto;
+    border-radius: 8rpx;
+}
+
+.semester-selector-bar .t-tag {
+    height: 32px!important;
+}
+
+.semester-selector-bar .semester-selector-options .exam-score-semester {
+    width: 30px!important;
 }
 
 .exam-score-activate {
     font-weight: bold!important;
     color: var(--td-primary-color-7)!important;
     background-color: var(--td-primary-color-1)!important;
-}
-
-.exam-score-semester {
-    aspect-ratio: 1 / 1;
 }
 
 .exam-score-semester .t-tag__text {
@@ -200,7 +227,13 @@
     margin: 0 5px;
 }
 
-.leave-history-more {
+.attendance-box-wrap {
+    position: relative;
+    overflow: hidden;
+}
+
+.leave-history-more,
+.attendance-box-more {
     height: 70px;
     position: absolute;
     bottom: 0;
@@ -213,7 +246,8 @@
     align-items: center;
 }
 
-.leave-history-more view {
+.leave-history-more view,
+.attendance-box-more view {
     font-weight: bold;
 }
 
