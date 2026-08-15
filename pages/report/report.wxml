@@ -48,7 +48,7 @@
                         variant="light"
                         class="exam-score-semester {{ currSemester === index ? 'exam-score-activate' : '' }}"
                         data-index="{{ index }}"
-                        wx:for="{{ examScore }}"
+                        wx:for="{{ semesterReports }}"
                         wx:key="semester"
                         bind:tap="onChangeSemester"
                     >{{ index + 1 }}</t-tag>

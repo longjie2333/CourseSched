@@ -1,6 +1,6 @@
 import request, { AuthRequirement } from '../../utils/request'
 import { AppError, AppErrorCode } from '../../utils/app-error'
-import { getCurrentSemesterNumber, groupExamScores } from './util'
+import { groupExamScores } from './util'
 
 const emptyAttendanceStatistics = () => ({
     late: 0, leave_early: 0, leave: 0,
@@ -38,39 +38,39 @@ export const reportService = {
      * @param scope 请求作用域
      */
     async getUserInfo(scope) {
-        const info = await request('info?cache', {
+        return request('info?cache', {
             auth: AuthRequirement.REQUIRED,
             scope,
         })
-
-        return {
-            ...info,
-            currentSemesterNumber: getCurrentSemesterNumber(info.semester, info.grade),
-        }
     },
 
     /**
      * 获取考试成绩
      * @param scope 请求作用域
      */
-    async getExamScore(scope, currentSemesterNumber) {
+    async getExamScore(scope) {
         const data = await getOptionalList(scope, 'examscore?cache')
 
         if (!data) return []
 
-        return groupExamScores(data, currentSemesterNumber)
+        return groupExamScores(data)
     },
 
     /**
      * 获取考勤数据
      * @param scope 请求作用域
+     * @param semester 学期查询参数，如 2024/2025(1)，缺省查教务系统默认学期
      */
-    async getAttendance(scope) {
-        const data = await getOptionalList(scope, 'attendance?cache')
+    async getAttendance(scope, semester) {
+        const path = semester
+            ? `attendance?sem=${encodeURIComponent(semester)}&cache`
+            : 'attendance?cache'
+        const data = await getOptionalList(scope, path)
 
         if (!data) return {
             statistics: emptyAttendanceStatistics(),
-            data: []
+            data: [],
+            semester: []
         }
 
         const statistics = emptyAttendanceStatistics()
@@ -85,7 +85,7 @@ export const reportService = {
             statistics.official_leave += Number(item.official_leave) || 0
         })
 
-        return { statistics, data: detail }
+        return { statistics, data: detail, semester: data.semester || [] }
     },
 
     /**

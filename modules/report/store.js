@@ -3,7 +3,6 @@ import { reportService } from './service'
 
 export const reportStore = observable({
     info: null,
-    currentSemesterNumber: null,
     examScore: null,
     attendance: null,
     leaveHistory: null,
@@ -26,7 +25,6 @@ export const reportStore = observable({
         }
 
         this.info = null
-        this.currentSemesterNumber = null
         this.examScore = null
         this.attendance = null
         this.leaveHistory = null
@@ -38,7 +36,6 @@ export const reportStore = observable({
 
             runInAction(() => {
                 this.info = info
-                this.currentSemesterNumber = info.currentSemesterNumber
             })
 
             // 2. 其余接口并行加载，各自完成后立即写入对应字段，分区展示
@@ -60,7 +57,7 @@ export const reportStore = observable({
             )
 
             await Promise.all([
-                guard(reportService.getExamScore(scope, info.currentSemesterNumber), (value) => {
+                guard(reportService.getExamScore(scope), (value) => {
                     this.examScore = value
                 }),
                 guard(reportService.getAttendance(scope), (value) => {
@@ -93,9 +90,24 @@ export const reportStore = observable({
         }
     }),
 
+    /**
+     * 按学期加载考勤，切换学期标签时调用
+     * @param scope 请求作用域
+     * @param semester 学期查询参数，如 2024/2025(1)
+     * @returns {Promise<*>} 考勤数据 { statistics, data, semester }
+     */
+    loadAttendance: action(async function (scope, semester) {
+        const data = await reportService.getAttendance(scope, semester)
+
+        runInAction(() => {
+            this.attendance = data
+        })
+
+        return data
+    }),
+
     clear: action(function () {
         this.info = null
-        this.currentSemesterNumber = null
         this.examScore = null
         this.attendance = null
         this.leaveHistory = null
