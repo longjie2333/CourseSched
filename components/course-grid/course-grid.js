@@ -1,7 +1,5 @@
 import { TIME_TITLES } from '../../constants/index'
 
-let lastClick = 0
-
 Component({
     properties: {
         weekData: {
@@ -15,6 +13,11 @@ Component({
     },
     data: {
         timeTitles: TIME_TITLES,
+    },
+    lifetimes: {
+        created() {
+            this.lastClick = 0
+        }
     },
     methods: {
         onCourseTap(e) {
@@ -36,12 +39,12 @@ Component({
             const now = Date.now()
             const doubleClickDelay = 300
 
-            if (now - lastClick > doubleClickDelay) {
-                lastClick = now
+            if (now - this.lastClick > doubleClickDelay) {
+                this.lastClick = now
                 return
             }
 
-            lastClick = 0
+            this.lastClick = 0
 
             this.triggerEvent('labeling', {
                 labelId: id

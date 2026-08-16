@@ -1,17 +1,14 @@
-import CryptoJS from '../../miniprogram_npm/crypto-js/index'
 import { showMessage } from '../../utils/index'
 import { RequestScope } from '../../utils/request-scope'
 import { authService } from '../../modules/auth/service'
-import { authStore } from '../../modules/auth/store'
 import env from '../../env'
 
 Page({
     data: {
         pickerVisible: false,
-        alarmVal: [30, 30],
-        alarmCustomVal: {
-            tm: null,
-            ta: null,
+        reminders: {
+            morning: { value: 30, custom: null },
+            afternoon: { value: 30, custom: null },
         },
         alarmOpts: [{
             label: '5分钟前',
@@ -35,7 +32,6 @@ Page({
             label: '自定义',
             value: -1
         }],
-        ifCustom: [false, false],
         ifChecking: true,
         isLoggedIn: false,
         show_login_dialog: false
@@ -60,12 +56,18 @@ Page({
             show_login_dialog: true
         })
     },
+    hideLoginDialog() {
+        this.setData({
+            show_login_dialog: false
+        })
+    },
     onAlarmChange(e) {
         const { value } = e.detail
+        const [morning, afternoon] = value
 
         this.setData({
-            ifCustom: value.map(v => v === -1),
-            alarmVal: value
+            'reminders.morning.value': morning,
+            'reminders.afternoon.value': afternoon,
         })
     },
     onCustomChange(e) {
@@ -73,7 +75,7 @@ Page({
         const { value } = e.detail
 
         this.setData({
-            [`alarmCustomVal.${id}`]: value
+            [`reminders.${id}.custom`]: value
         })
     },
     async onLoggingIn(e) {
@@ -92,46 +94,41 @@ Page({
         done()
     },
     copySubUrl() {
-        const { alarmVal, alarmCustomVal } = this.data
-        const [ tm, ta ] = alarmVal
-        const { username, password } = authStore
-        const wordArr = CryptoJS.enc.Utf8.parse(`${username}:${password}`)
-        const en = CryptoJS.enc.Base64.stringify(wordArr)
+        const { morning, afternoon } = this.data.reminders
+        const en = authService.getEncodedCredentials()
         const subUrl = [ `${env.icsUrl}course/subscribe`, `?en=${en}`, '&cache' ]
 
-        if (tm !== -1 && tm === ta) {
-            subUrl.push(`&t=-${tm}`)
+        if (morning.value !== -1 && morning.value === afternoon.value) {
+            subUrl.push(`&t=-${morning.value}`)
 
             wx.setClipboardData({
                 data: subUrl.join(''),
                 success: () => {
-                    showMessage('info', `复制成功，上午和下午将会统一为${tm}分钟前提醒`)
+                    showMessage('info', `复制成功，上午和下午将会统一为${morning.value}分钟前提醒`)
                 }
             })
             return
         }
 
-        const tmC = tm === -1 ? alarmCustomVal.tm : tm
+        const morningMinutes = morning.value === -1 ? morning.custom : morning.value
 
-        if (tm === -1 && !tmC) {
+        if (morning.value === -1 && !morningMinutes) {
             return showMessage('error', '上午自定义提醒时间不能为空')
         }
 
-        const taC = ta === -1 ? alarmCustomVal.ta : ta
+        const afternoonMinutes = afternoon.value === -1 ? afternoon.custom : afternoon.value
 
-        if (ta === -1 && !taC) {
+        if (afternoon.value === -1 && !afternoonMinutes) {
             return showMessage('error', '下午自定义提醒时间不能为空')
         }
 
-        subUrl.push(`&tm=-${tmC}`)
-        subUrl.push(`&ta=-${taC}`)
-
-        console.log(subUrl.join(''))
+        subUrl.push(`&tm=-${morningMinutes}`)
+        subUrl.push(`&ta=-${afternoonMinutes}`)
 
         wx.setClipboardData({
             data: subUrl.join(''),
             success: () => {
-                showMessage('info', `复制成功，上午将会${tmC}分钟前提醒，下午为${taC}分钟前`)
+                showMessage('info', `复制成功，上午将会${morningMinutes}分钟前提醒，下午为${afternoonMinutes}分钟前`)
             }
         })
     },
@@ -144,7 +141,7 @@ Page({
         return {
             title: '将课表导入日历',
             path: '/pages/subCalendar/subCalendar',
-            imageUrl: 'https://cn-img.owoser.cn/images/2026/08/06/cc76f9691869a8d1e1d861946aade972.png'
+            imageUrl: 'https://cn-img.owoser.cn/images/2026/08/16/cd9b7bea7f3e09984daff7c371fec7c9.png'
         }
     },
 })

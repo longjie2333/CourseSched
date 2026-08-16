@@ -1,7 +1,13 @@
 import request, { AuthRequirement } from '../../utils/request'
-import { AppError } from '../../utils/app-error'
+import CryptoJS from '../../miniprogram_npm/crypto-js/index'
+import { authStore } from './store'
 
 export const authService = {
+    getEncodedCredentials() {
+        const wordArray = CryptoJS.enc.Utf8.parse(`${authStore.username}:${authStore.password}`)
+        return CryptoJS.enc.Base64.stringify(wordArray)
+    },
+
     /**
      * 检查登录信息是否有效
      * @param scope 请求作用域
@@ -16,10 +22,6 @@ export const authService = {
 
             return { isValid: true, msg: '' }
         } catch (err) {
-            if (err instanceof AppError && err.message === '资源不存在') {
-                return { isValid: true, msg: '' }
-            }
-
             return { isValid: false, msg: err instanceof Error ? err.message : String(err) }
         }
     }

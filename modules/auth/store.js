@@ -1,15 +1,13 @@
 import { action, observable } from 'mobx-miniprogram'
 import { STORE_KEY } from '../../constants/index'
+import { createPersistedStore } from '../../utils/persisted-store'
 
-const PERSIST_KEYS = ['username', 'password']
-
-const readPersistedState = () => {
-    const stored = wx.getStorageSync(STORE_KEY.AUTH)
-
-    return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {}
-}
-
-const persisted = readPersistedState()
+const persistence = createPersistedStore(
+    STORE_KEY.AUTH,
+    { username: '', password: '' },
+    ['username', 'password']
+)
+const persisted = persistence.state
 
 export const authStore = observable({
     username: persisted.username || '',
@@ -20,13 +18,7 @@ export const authStore = observable({
     },
 
     persist: action(function () {
-        const data = {}
-
-        for (const key of PERSIST_KEYS) {
-            data[key] = this[key]
-        }
-
-        wx.setStorageSync(STORE_KEY.AUTH, data)
+        persistence.persist(this)
     }),
 
     setCredentials: action(function (username, password) {
@@ -38,6 +30,6 @@ export const authStore = observable({
     clear: action(function () {
         this.username = ''
         this.password = ''
-        wx.removeStorageSync(STORE_KEY.AUTH)
+        persistence.clear()
     }),
 })

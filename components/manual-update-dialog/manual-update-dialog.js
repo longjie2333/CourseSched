@@ -1,5 +1,5 @@
-import { STORE_KEY, UPDATE_INTERVAL_TIME } from '../../constants/index'
-import { ErrorMessage, SuccessMessage, WarningMessage } from '../../utils/index'
+import { STORE_KEY, UPDATE_INTERVAL_DAYS } from '../../constants/index'
+import { showMessage } from '../../utils/index'
 
 Component({
     properties: {
@@ -9,7 +9,7 @@ Component({
         }
     },
     data: {
-        updateIntervalTime: UPDATE_INTERVAL_TIME,
+        updateIntervalDays: UPDATE_INTERVAL_DAYS,
         dialogActions: [{
             content: '更新',
             theme: 'light'
@@ -21,23 +21,20 @@ Component({
     lifetimes: {
         attached() {
             this.setData({
-                updateIntervalTime: wx.getStorageSync(STORE_KEY.UPDATE_INTERVAL_TIME) || UPDATE_INTERVAL_TIME
+                updateIntervalDays: wx.getStorageSync(STORE_KEY.UPDATE_INTERVAL_TIME) || UPDATE_INTERVAL_DAYS
             })
         }
     },
     methods: {
-        displayManualUpdateDialog() {
-            this.setData({
-                visible: !this.data.visible,
-            })
+        closeDialog() {
+            this.triggerEvent('close')
         },
         onAction(e) {
-            const { type } = e
             const { index } = e.detail
 
-            this.displayManualUpdateDialog()
+            this.closeDialog()
 
-            if (type === 'action' && index === 0) {
+            if (index === 0) {
                 wx.showLoading({
                     title: '更新中',
                     mask: true
@@ -54,31 +51,40 @@ Component({
             const { value } = e.detail
 
             this.setData({
-                updateIntervalTime: value
+                updateIntervalDays: value
             })
         },
         saveUpdateInterval() {
-            const { updateIntervalTime } = this.data
+            const { updateIntervalDays } = this.data
 
-            if (updateIntervalTime === '') {
-                WarningMessage(this, '#manual-update-message', '更新频率不能设置为空')
+            if (updateIntervalDays === '') {
+                showMessage('warning', '更新频率不能设置为空', {
+                    context: this,
+                    selector: '#manual-update-message'
+                })
 
                 return this.setData({
-                    updateIntervalTime: wx.getStorageSync(STORE_KEY.UPDATE_INTERVAL_TIME) || UPDATE_INTERVAL_TIME
+                    updateIntervalDays: wx.getStorageSync(STORE_KEY.UPDATE_INTERVAL_TIME) || UPDATE_INTERVAL_DAYS
                 })
             }
 
             wx.setStorage({
                 key: STORE_KEY.UPDATE_INTERVAL_TIME,
-                data: updateIntervalTime,
+                data: updateIntervalDays,
                 success: () => {
-                    SuccessMessage(this, '#manual-update-message', '已保存')
-                    this.displayManualUpdateDialog()
+                    showMessage('success', '已保存', {
+                        context: this,
+                        selector: '#manual-update-message'
+                    })
+                    this.closeDialog()
                 },
                 fail: (err) => {
                     err = err.errMsg || err
 
-                    ErrorMessage(this, '#manual-update-message', '保存失败：' + err)
+                    showMessage('error', '保存失败：' + err, {
+                        context: this,
+                        selector: '#manual-update-message'
+                    })
                 }
             })
         }

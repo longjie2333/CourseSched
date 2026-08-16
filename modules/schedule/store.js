@@ -2,18 +2,31 @@ import { action, observable, runInAction } from 'mobx-miniprogram'
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
 import { AppError, AppErrorCode } from '../../utils/app-error'
 import { getTimestampAfterDays } from '../../utils/index'
-import { STORE_KEY, UPDATE_INTERVAL_TIME } from '../../constants/index'
+import { STORE_KEY, UPDATE_INTERVAL_DAYS } from '../../constants/index'
 import { scheduleService } from './service'
+import { createPersistedStore } from '../../utils/persisted-store'
 
-const PERSIST_KEYS = [
-    'className',
-    'courseList',
-    'examList',
-    'courseListSha256',
-    'labelData',
-    'startingDate',
-    'expiredAt',
-]
+const persistence = createPersistedStore(
+    STORE_KEY.SCHEDULE_DATA,
+    {
+        className: null,
+        courseList: null,
+        examList: null,
+        courseListSha256: null,
+        labelData: null,
+        startingDate: null,
+        expiredAt: null,
+    },
+    [
+        'className',
+        'courseList',
+        'examList',
+        'courseListSha256',
+        'labelData',
+        'startingDate',
+        'expiredAt',
+    ]
+)
 
 export const RefreshResult = {
     Cache: 'cache',
@@ -26,13 +39,7 @@ export const RefreshResult = {
     Failed: 'failed',
 }
 
-const readPersistedState = () => {
-    const stored = wx.getStorageSync(STORE_KEY.SCHEDULE_DATA)
-
-    return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {}
-}
-
-const persisted = readPersistedState()
+const persisted = persistence.state
 
 export const scheduleStore = observable({
     className: persisted.className || null,
@@ -49,29 +56,23 @@ export const scheduleStore = observable({
     examPromise: null,
 
     persist: action(function () {
-        const data = {}
-
-        for (const key of PERSIST_KEYS) {
-            data[key] = this[key]
-        }
-
-        wx.setStorageSync(STORE_KEY.SCHEDULE_DATA, data)
+        persistence.persist(this)
     }),
 
     /**
-     * 计算 SHA256 值，并按需更新开学日期与过期时间
+     * 更新课表签名、开学日期与过期时间
      * @param latestStartingDate 新获取的开学日期
      * @param latestCourses 新获取的课程数据
-     * @param skip 跳过更新检查
+     * @param force 强制视为有变动
      * @returns true 为有变动，false 为无变动
      */
-    sumCourseListSHA256: action(function (latestStartingDate, latestCourses, skip) {
+    updateScheduleMetadata: action(function (latestStartingDate, latestCourses, force) {
         const newSHA256 = CryptoJS.SHA256(JSON.stringify(latestCourses)).toString()
-        const updateIntervalTime = wx.getStorageSync(STORE_KEY.UPDATE_INTERVAL_TIME) || UPDATE_INTERVAL_TIME
+        const updateIntervalDays = wx.getStorageSync(STORE_KEY.UPDATE_INTERVAL_TIME) || UPDATE_INTERVAL_DAYS
 
-        this.expiredAt = getTimestampAfterDays(updateIntervalTime)
+        this.expiredAt = getTimestampAfterDays(updateIntervalDays)
 
-        if (skip || this.startingDate !== latestStartingDate || this.courseListSha256 !== newSHA256) {
+        if (force || this.startingDate !== latestStartingDate || this.courseListSha256 !== newSHA256) {
             this.startingDate = latestStartingDate
             this.courseListSha256 = newSHA256
             return true
@@ -142,33 +143,33 @@ export const scheduleStore = observable({
 
             if (!this.expiredAt || Date.now() > this.expiredAt) {
                 this.scheduleLoad = { status: 'ready', isStale: true }
+                // 清空上一次事件值，使连续两次 Updated 仍能触发页面 reaction。
+                this.refreshed = null
 
-                setTimeout(() => {
-                    requestAll()
-                        .then(([startingDateResponse, courseListResponse]) => {
-                            const summed = this.sumCourseListSHA256(startingDateResponse, courseListResponse.detail)
+                requestAll()
+                    .then(([startingDateResponse, courseListResponse]) => {
+                        const summed = this.updateScheduleMetadata(startingDateResponse, courseListResponse.detail)
 
-                            runInAction(() => {
-                                if (summed) {
-                                    this.normalizeSaveCourse(courseListResponse)
-                                    this.persist()
-                                    this.scheduleLoad = { status: 'ready', isStale: false }
-                                    this.refreshed = RefreshResult.Updated
-                                    return
-                                }
-
+                        runInAction(() => {
+                            if (summed) {
+                                this.normalizeSaveCourse(courseListResponse)
                                 this.persist()
                                 this.scheduleLoad = { status: 'ready', isStale: false }
-                                this.refreshed = RefreshResult.NotModified
-                            })
+                                this.refreshed = RefreshResult.Updated
+                                return
+                            }
+
+                            this.persist()
+                            this.scheduleLoad = { status: 'ready', isStale: false }
+                            this.refreshed = RefreshResult.NotModified
                         })
-                        .catch((error) => {
-                            runInAction(() => {
-                                this.scheduleLoad = { status: 'ready', isStale: true, error }
-                                this.refreshed = this.getFailureResult(error)
-                            })
+                    })
+                    .catch((error) => {
+                        runInAction(() => {
+                            this.scheduleLoad = { status: 'ready', isStale: true, error }
+                            this.refreshed = this.getFailureResult(error)
                         })
-                })
+                    })
 
                 return RefreshResult.Refreshing
             }
@@ -182,7 +183,7 @@ export const scheduleStore = observable({
             const [startingDateResponse, courseListResponse] = await requestAll()
 
             runInAction(() => {
-                this.sumCourseListSHA256(startingDateResponse, courseListResponse.detail, true)
+                this.updateScheduleMetadata(startingDateResponse, courseListResponse.detail, true)
                 this.normalizeSaveCourse(courseListResponse)
                 this.persist()
                 this.scheduleLoad = { status: 'ready', isStale: false }
@@ -212,7 +213,7 @@ export const scheduleStore = observable({
 
         this.examLoad = { status: 'loading' }
 
-        const promise = scheduleService.fetchExamTime(scope)
+        const promise = scheduleService.getExamTime(scope)
             .then((data) => {
                 runInAction(() => {
                     this.examList = data || []
@@ -278,6 +279,6 @@ export const scheduleStore = observable({
         this.refreshed = null
         this.scheduleLoad = { status: 'idle' }
         this.examLoad = { status: 'idle' }
-        wx.removeStorageSync(STORE_KEY.SCHEDULE_DATA)
+        persistence.clear()
     }),
 })

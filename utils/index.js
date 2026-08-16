@@ -5,7 +5,7 @@ import Message from '../miniprogram_npm/tdesign-miniprogram/message/index'
  * 若返回 null 则表示计算异常。
  * @param {string} semesterBegins 开学日期
  */
-export const getThisWeeks = (semesterBegins) => {
+export const getCurrentSemesterWeekIndex = (semesterBegins) => {
     const start = new Date(semesterBegins)
     const now = new Date()
 
@@ -57,18 +57,6 @@ export const getThisDate = () => {
 }
 
 /**
- * 获取今天星期几
- */
-export const getThisDay = (date) => {
-    if (date) {
-        date = new Date(date)
-    } else {
-        date = new Date()
-    }
-    return date.getDay() || 7
-}
-
-/**
  * 计算当前时间n分钟后的毫秒级时间戳
  * @param {number} minutes - 分钟
  */
@@ -116,16 +104,6 @@ export const formatTimestamp = (timestamp) => {
 }
 
 /**
- * 判断是否为当天对应节次的课程
- * @param {*} course
- * @param {*} day
- * @param {*} time
- */
-export const isThisDayAndTime = (course, day, time) => {
-    return course.week === day && course.start === time + 1
-}
-
-/**
  * 判断当前时间是否超过所提供的毫秒级时间戳
  * @param {number} timestamp - 要比较的毫秒级时间戳
  */
@@ -165,60 +143,14 @@ export const getColor = (colorMap, key) => {
 }
 
 /**
- * 计算完成进度的百分比
- *
- * @param {number} completed 已完成的数量
- * @param {number} total     总数量
- * @param {number} precision 小数位数（默认保留两位）
- * @returns {number} 例如 "20%"、"66.67%" …
- */
-export const calcPercentage = (completed, total, precision = 2) => {
-    if (total === 0) {
-        throw new Error('总数量 (total) 不能为 0');
-    }
-
-    const c = Number(completed)
-    const t = Number(total)
-
-    const raw = (c / t) * 100
-    const factor = Math.pow(10, precision)
-    const rounded = Math.round(raw * factor) / factor
-
-    return precision === 0 ? rounded : +rounded.toFixed(precision)
-}
-
-export const globalMessage = (type, context, selector, content, other = {}) => {
-    Message[type]({
-        context, selector, content,
-        offset: [100, 32],
-        duration: 3000,
-        ...other
-    })
-}
-
-export const InfoMessage = (context, selector, content, other) => {
-    globalMessage('info', context, selector, content, other)
-}
-
-export const SuccessMessage = (context, selector, content, other) => {
-    globalMessage('success', context, selector, content, other)
-}
-
-export const WarningMessage = (context, selector, content, other) => {
-    globalMessage('warning', context, selector, content, other)
-}
-
-export const ErrorMessage = (context, selector, content, other) => {
-    globalMessage('error', context, selector, content, other)
-}
-/**
- * 页面层消息提示：优先使用 t-message，无页面上下文时回退 wx.showToast
+ * 消息提示：默认使用当前页面的 t-message，也可显式指定组件上下文与 selector。
  * @param {'info'|'success'|'error'|'warning'} type 消息类型
  * @param {String} content 消息内容
+ * @param {Object} options t-message 配置
  */
-export const showMessage = (type, content) => {
+export const showMessage = (type, content, options = {}) => {
     const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
-    const context = pages[pages.length - 1]
+    const context = options.context || pages[pages.length - 1]
 
     if (!context) {
         wx.showToast({
@@ -235,5 +167,6 @@ export const showMessage = (type, content) => {
         content,
         offset: [100, 32],
         duration: 3000,
+        ...options,
     })
 }

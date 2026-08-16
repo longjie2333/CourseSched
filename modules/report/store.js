@@ -13,21 +13,23 @@ export const reportStore = observable({
     /**
      * 加载学期报告（并发去重）
      * @param scope 请求作用域
-     * @returns {Promise<boolean>} 是否成功
+     * @returns {Promise<void>}
      */
     loadReport: action(async function (scope) {
         if (this.requestPromise) {
             try {
                 await this.requestPromise
-                return true
             } catch (error) {
-                return false
+                return
             }
+
+            return
         }
 
         this.info = null
         this.examScore = null
         this.attendance = null
+        this.attendanceCache = {}
         this.leaveHistory = null
         this.reportLoad = { status: 'loading' }
 
@@ -46,14 +48,12 @@ export const reportStore = observable({
                     runInAction(() => {
                         assign(value)
                     })
-                    return true
                 },
                 (error) => {
                     runInAction(() => {
                         failed = true
                         this.reportLoad = { status: 'error', error }
                     })
-                    return false
                 }
             )
 
@@ -80,12 +80,10 @@ export const reportStore = observable({
 
         try {
             await promise
-            return true
         } catch (error) {
             runInAction(() => {
                 this.reportLoad = { status: 'error', error }
             })
-            return false
         } finally {
             this.requestPromise = null
         }
@@ -119,6 +117,15 @@ export const reportStore = observable({
         })
 
         return data
+    }),
+
+    /** 将首屏默认学期的响应写入学期缓存，避免紧接着重复请求。 */
+    cacheAttendance: action(function (semester) {
+        if (semester && this.attendance) {
+            this.attendanceCache[semester] = this.attendance
+        }
+
+        return this.attendance
     }),
 
     clear: action(function () {

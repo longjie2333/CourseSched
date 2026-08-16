@@ -202,7 +202,7 @@
                 </view>
                 <view
                     class="attendance-statistic"
-                    wx:if="{{ attendanceStatistics.online === '0' }}"
+                    wx:if="{{ attendanceStatistics.online > 0 }}"
                 >
                     <view class="attendance-statistic-title">网上到课</view>
                     <view class="attendance-statistic-content">
@@ -222,8 +222,7 @@
             <t-divider class="divider" content="考勤详情" align="center"/>
 
             <view
-                class="attendance-box-wrap"
-                style="max-height: {{ attendanceBoxStyle }};"
+                class="attendance-box-wrap {{ !show_attendance_more && attendanceRecords.length > 3 ? 'is-collapsed' : '' }}"
             >
                 <t-steps
                     readonly
@@ -302,8 +301,7 @@
         </view>
 
         <view
-            class="report-card"
-            style="max-height: {{ leaveHistoryStyle }};"
+            class="report-card {{ !show_leave_history_more && leaveRecords.length > 3 ? 'is-collapsed' : '' }}"
             wx:else
         >
             <view class="leave-history-title">这学期你一共请了<view>{{ leaveRecords.length }}</view>次假</view>

@@ -16,14 +16,16 @@ Component({
         }
     },
     data: {
-        subtitle: '',
         defaultValue: '',
         value: ''
     },
     observers: {
-        visible() {
+        visible(visible) {
+            if (!visible) {
+                return
+            }
+
             const { startingDate, labelId } = this.data
-            const [type, date, time] = labelId.split('.')
             const lastLabel = scheduleStore.labelData || {}
             const labels = lastLabel[startingDate]
 
@@ -32,8 +34,7 @@ Component({
             }
 
             this.setData({
-                defaultValue: labels[labelId]?.value || '',
-                subtitle: `${date} 第${parseInt(time) + 1} 节课`
+                defaultValue: labels[labelId]?.value || ''
             })
         }
     },
@@ -41,11 +42,10 @@ Component({
         hiddenPopup() {
             this.onUpdate()
             this.setData({
-                visible: false,
                 defaultValue: '',
-                value: '',
-                subtitle: ''
+                value: ''
             })
+            this.triggerEvent('close')
         },
         onChange(e) {
             const { value } = e.detail
@@ -62,25 +62,17 @@ Component({
                 scheduleStore.updateLabel(startingDate, labelId, value)
             }
 
-            this.triggerEvent('onUpdate', {
-                hasUpdated
-            })
         },
         onClear() {
             const { startingDate, labelId } = this.data
 
             scheduleStore.removeLabel(startingDate, labelId)
 
-            this.triggerEvent('onUpdate', {
-                hasUpdated: true
-            })
-
             this.setData({
-                visible: false,
                 defaultValue: '',
-                value: '',
-                subtitle: ''
+                value: ''
             })
+            this.triggerEvent('close')
         }
     }
 })

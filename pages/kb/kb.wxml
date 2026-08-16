@@ -308,30 +308,33 @@
 </view>
 
 <bottom-btns
-    ifVacation="{{ isVacation }}"
     bind:onReportTap="navigateToReport"
     bind:onCalendarTap="navigateToSubCalendar"
 />
 
 <login-dialog
     visible="{{ show_login_dialog }}"
+    bind:close="hideLoginDialog"
     bind:onLoggingIn="onLoggingIn"
 />
 
 <manual-update-dialog
     visible="{{ show_manual_update_dialog }}"
+    bind:close="hideManualUpdateDialog"
     bind:onManualUpdate="onManualUpdate"
 />
 
 <detail-popup
     visible="{{ show_detail_popup }}"
     content="{{ detailContent }}"
+    bind:close="hideDetailPopup"
 />
 
 <label-popup
     visible="{{ show_label_popup }}"
     labelId="{{ labelId }}"
     startingDate="{{ startingDate }}"
+    bind:close="hideLabelPopup"
 />
 
 <notice />

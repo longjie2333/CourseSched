@@ -22,22 +22,14 @@ export const scheduleService = {
     },
 
     /**
-     * 获取考试时间
-     * @param scope 请求作用域
-     */
-    async getExamTime(scope) {
-        return request('examtime', {
-            auth: AuthRequirement.REQUIRED,
-            scope,
-        })
-    },
-
-    /**
      * 获取并按考试节次/周排序考试时间
      * @param scope 请求作用域
      */
-    async fetchExamTime(scope) {
-        const data = await this.getExamTime(scope)
+    async getExamTime(scope) {
+        const data = await request('examtime', {
+            auth: AuthRequirement.REQUIRED,
+            scope,
+        })
         const detail = (data && data.detail) || []
 
         return [...detail].sort((a, b) => {

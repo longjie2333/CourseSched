@@ -28,30 +28,6 @@
     -webkit-line-clamp: 1;
 }
 
-.popup-box {
-    border-radius: var(--td-radius-default);
-    background-color: var(--td-bg-color-secondarycontainer);
-    padding: 10px 12px;
-    margin-bottom: 10px;
-}
-
-.popup-box .popup-box-title {
-    margin-bottom: 8px;
-    text-align: center;
-    color: var(--td-text-color-secondary);
-}
-
-.popup-list {
-    display: flex;
-    align-items: center;
-    font-size: 36rpx;
-    margin-bottom: 8px;
-}
-
-.popup-list .icon {
-    margin-right: 8px;
-}
-
 .from-input {
     flex: 1;
     max-height: 140px;

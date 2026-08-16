@@ -1,7 +1,6 @@
 import { authStore } from '../../modules/auth/store'
-import { scheduleStore } from '../../modules/schedule/store'
-import { commonStore } from '../../modules/common/store'
-import { ErrorMessage } from '../../utils/index'
+import { clearAppData } from '../../modules/app/clear-data'
+import { showMessage } from '../../utils/index'
 
 Component({
     properties: {
@@ -27,17 +26,16 @@ Component({
     },
     lifetimes: {
         attached() {
-            this.setData({
-                ifLoggedIn: authStore.hasSession,
-                config: {
-                    username: authStore.username,
-                    password: authStore.password
-                }
-            })
+            this.syncCredentials()
         }
     },
     pageLifetimes: {
         show() {
+            this.syncCredentials()
+        }
+    },
+    methods: {
+        syncCredentials() {
             this.setData({
                 ifLoggedIn: authStore.hasSession,
                 config: {
@@ -45,27 +43,21 @@ Component({
                     password: authStore.password
                 }
             })
-        }
-    },
-    methods: {
-        displayLoginDialog() {
-            this.setData({
-                visible: !this.data.visible,
-            })
+        },
+        closeDialog() {
+            this.triggerEvent('close')
         },
         clearLogin() {
-            authStore.clear()
-            scheduleStore.clear()
-            commonStore.clear()
+            clearAppData()
 
             this.setData({
-                visible: false,
                 ifLoggedIn: false,
                 config: {
                     username: '',
                     password: ''
                 }
             })
+            this.closeDialog()
 
             wx.restartMiniProgram({
                 path: '/pages/kb/kb'
@@ -75,7 +67,10 @@ Component({
             const { username, password } = this.data.config
 
             if (username === '' || password === '') {
-                return ErrorMessage(this, '#login-message', '学号或密码不能为空')
+                return showMessage('error', '学号或密码不能为空', {
+                    context: this,
+                    selector: '#login-message'
+                })
             }
 
             try {
@@ -85,13 +80,9 @@ Component({
                 })
 
                 authStore.setCredentials(username, password)
-
-                this.setData({
-                    visible: false
-                })
+                this.closeDialog()
 
                 this.triggerEvent('onLoggingIn', {
-                    username, password,
                     done: () => {
                         this.setData({
                             ifLoggedIn: authStore.hasSession
@@ -101,7 +92,10 @@ Component({
                     }
                 })
             } catch (err) {
-                ErrorMessage(this, '#login-message', '获取时发生错误')
+                showMessage('error', '获取时发生错误', {
+                    context: this,
+                    selector: '#login-message'
+                })
                 wx.hideLoading()
             }
         },

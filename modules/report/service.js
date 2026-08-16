@@ -8,17 +8,17 @@ const emptyAttendanceStatistics = () => ({
 })
 
 /**
- * 可选列表接口：AUTH/INVALID_DATA 降级为空数组，网络/服务端/取消继续抛出
+ * 可选报告接口：AUTH/INVALID_DATA 降级为空值，网络/服务端/取消继续抛出
  * @param scope 请求作用域
  * @param path 接口路径
- * @returns {Promise<*[]>}
+ * @returns {Promise<*>}
  */
-const getOptionalList = async (scope, path) => {
+const requestOptional = async (scope, path) => {
     try {
         return await request(path, {
             auth: AuthRequirement.REQUIRED,
             scope,
-        }) || []
+        })
     } catch (error) {
         if (error instanceof AppError && (
             error.code === AppErrorCode.NETWORK ||
@@ -28,7 +28,7 @@ const getOptionalList = async (scope, path) => {
             throw error
         }
 
-        return []
+        return undefined
     }
 }
 
@@ -49,11 +49,8 @@ export const reportService = {
      * @param scope 请求作用域
      */
     async getExamScore(scope) {
-        const data = await getOptionalList(scope, 'examscore?cache')
-
-        if (!data) return []
-
-        return groupExamScores(data)
+        const data = await requestOptional(scope, 'examscore?cache')
+        return groupExamScores(data || [])
     },
 
     /**
@@ -65,13 +62,7 @@ export const reportService = {
         const path = semester
             ? `attendance?sem=${encodeURIComponent(semester)}&cache`
             : 'attendance?cache'
-        const data = await getOptionalList(scope, path)
-
-        if (!data) return {
-            statistics: emptyAttendanceStatistics(),
-            data: [],
-            semester: []
-        }
+        const data = await requestOptional(scope, path) || {}
 
         const statistics = emptyAttendanceStatistics()
         const detail = data.detail || []
@@ -93,6 +84,6 @@ export const reportService = {
      * @param scope 请求作用域
      */
     async getLeaveHistory(scope) {
-        return getOptionalList(scope, 'leavehistory?cache')
+        return await requestOptional(scope, 'leavehistory?cache') || []
     }
 }

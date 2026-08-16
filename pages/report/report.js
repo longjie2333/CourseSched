@@ -1,10 +1,10 @@
 import { reaction } from 'mobx-miniprogram'
 import { createStoreBindings } from 'mobx-miniprogram-bindings'
-import { EXAM_WEEKS, VACATION_FROM, VACATION_TO, WEEK_TITLES } from '../../constants/index'
+import { EXAM_WEEK_INDEXES, VACATION_FROM, VACATION_BEFORE, WEEK_TITLES } from '../../constants/index'
 import { scheduleStore } from '../../modules/schedule/store'
 import { reportStore } from '../../modules/report/store'
 import { RequestScope } from '../../utils/request-scope'
-import { getThisWeeks, showMessage } from '../../utils/index'
+import { getCurrentSemesterWeekIndex, showMessage } from '../../utils/index'
 
 const emptyInfo = { sid: '', name: '', department: '', class: '', avatar: '' }
 const emptyAttendanceStatistics = { late: 0, leave_early: 0, leave: 0, absent: 0, online: 0, official_leave: 0 }
@@ -29,8 +29,6 @@ Page({
         attendanceStatistics: emptyAttendanceStatistics,
         attendanceRecords: [],
         leaveRecords: [],
-        leaveHistoryStyle: '20000px',
-        attendanceBoxStyle: '20000px',
         loadErrorMessage: '',
         welcomeInfoRowCol: [{ width: '45%', height: '20px' }],
         welcomeExamRowCol: [{ width: '80%', height: '20px' }],
@@ -48,8 +46,7 @@ Page({
                 reportLoad: store => store.reportLoad,
             },
             actions: {
-                loadReport: 'loadReport',
-                clearReport: 'clear'
+                loadReport: 'loadReport'
             }
         })
 
@@ -94,9 +91,9 @@ Page({
     },
     getSemesterCount() {
         const scores = Array.isArray(reportStore.examScore) ? reportStore.examScore : []
-        const currentWeeks = scheduleStore.startingDate ? getThisWeeks(scheduleStore.startingDate) : null
+        const currentWeeks = scheduleStore.startingDate ? getCurrentSemesterWeekIndex(scheduleStore.startingDate) : null
         const isVacation = typeof currentWeeks === 'number' &&
-            (currentWeeks >= VACATION_FROM || currentWeeks < VACATION_TO)
+            (currentWeeks >= VACATION_FROM || currentWeeks < VACATION_BEFORE)
 
         // 假期停留在最新有成绩学期，开学前一周起与学期中显示新学期
         return Math.max(isVacation ? scores.length : scores.length + 1, 1)
@@ -108,10 +105,15 @@ Page({
 
         return semesters[index] || ''
     },
-    async loadAttendanceForSemester(index) {
+    async loadAttendanceForSemester(index, reuseCurrent = false) {
         const semester = this.getSemesterString(index)
 
         if (!semester) {
+            return
+        }
+
+        if (reuseCurrent) {
+            reportStore.cacheAttendance(semester)
             return
         }
 
@@ -145,15 +147,12 @@ Page({
             : autoSemesterIndex
         const currentSemester = semesterReports[currentSemesterIndex] || {}
         const currentExamScores = currentSemester.scores || []
-        const currentWeeks = scheduleStore.startingDate ? getThisWeeks(scheduleStore.startingDate) : null
+        const currentWeeks = scheduleStore.startingDate ? getCurrentSemesterWeekIndex(scheduleStore.startingDate) : null
         const currentSemesterNumber = this.getSemesterCount()
         const isCurrentSemester = currentSemesterNumber === currentSemester.semester
-        const isExamWeek = typeof currentWeeks === 'number' && EXAM_WEEKS.includes(currentWeeks)
+        const isExamWeek = typeof currentWeeks === 'number' && EXAM_WEEK_INDEXES.includes(currentWeeks)
         const attendanceStatistics = (attendance && attendance.statistics) || emptyAttendanceStatistics
-        const attendanceRecords = ((attendance && attendance.data) || []).map(item => ({
-            ...item,
-            weekTitle: WEEK_TITLES[Number(item.week)] || '',
-        }))
+        const attendanceRecords = (attendance && attendance.data) || []
         const leaveRecords = leaveHistory || []
 
         this.setData({
@@ -172,15 +171,13 @@ Page({
             attendanceStatistics,
             attendanceRecords,
             leaveRecords,
-            leaveHistoryStyle: (!this.data.show_leave_history_more && leaveRecords.length > 3) ? '300px' : '20000px',
-            attendanceBoxStyle: (!this.data.show_attendance_more && attendanceRecords.length > 3) ? '300px' : '20000px',
             loadErrorMessage: reportLoad.status === 'error' ? this.getErrorMessage(reportLoad.error) : '',
         })
     },
     getDefaultSemesterIndex() {
-        const currentWeeks = scheduleStore.startingDate ? getThisWeeks(scheduleStore.startingDate) : null
+        const currentWeeks = scheduleStore.startingDate ? getCurrentSemesterWeekIndex(scheduleStore.startingDate) : null
         const isVacation = typeof currentWeeks === 'number' &&
-            (currentWeeks >= VACATION_FROM || currentWeeks < VACATION_TO)
+            (currentWeeks >= VACATION_FROM || currentWeeks < VACATION_BEFORE)
 
         if (isVacation) {
             const semesterReports = this.buildSemesterReports()
@@ -216,7 +213,7 @@ Page({
         })
 
         this.refreshDerived()
-        await this.loadAttendanceForSemester(defaultIndex)
+        await this.loadAttendanceForSemester(defaultIndex, true)
     },
     onManualUpdateTap() {
         this.getSemesterReport()
@@ -235,14 +232,10 @@ Page({
         this.setData({
             show_leave_history_more: !this.data.show_leave_history_more,
         })
-
-        this.refreshDerived()
     },
     showAttendanceMore() {
         this.setData({
             show_attendance_more: !this.data.show_attendance_more,
         })
-
-        this.refreshDerived()
     },
 })

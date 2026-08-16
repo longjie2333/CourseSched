@@ -1,6 +1,6 @@
 import { AppError, AppErrorCode } from './app-error'
-import { STORE_KEY } from '../constants/index'
 import { collectErrorLog } from './error-logger'
+import { authStore } from '../modules/auth/store'
 import env from '../env'
 
 /**
@@ -34,7 +34,7 @@ const DEFAULT_OPTIONS = {
  * 网络请求客户端
  * - 2xx 解包 { data, msg, code } 信封
  * - 400/401/403 -> AUTH，>=500 -> SERVER，其余 -> INVALID_DATA，fail -> NETWORK/CANCELLED
- * - auth REQUIRED 时注入 STORE_KEY.AUTH 中的 username/password
+ * - auth REQUIRED 时注入 authStore 中的当前 username/password
  * - scope 提供 abort 语义；CANCELLED 不记日志
  * @param {String} path 接口路径
  * @param {Object} options 可选配置
@@ -56,11 +56,11 @@ export default function request(path, options = {}) {
     const requestBody = { ...body }
 
     if (auth === AuthRequirement.REQUIRED) {
-        const stored = wx.getStorageSync(STORE_KEY.AUTH)
+        const { username, password } = authStore
 
-        if (stored && stored.username && stored.password) {
-            requestBody.username = stored.username
-            requestBody.password = stored.password
+        if (username && password) {
+            requestBody.username = username
+            requestBody.password = password
         }
     }
 

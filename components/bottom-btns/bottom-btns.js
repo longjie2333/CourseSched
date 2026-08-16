@@ -1,23 +1,13 @@
 import request from '../../utils/request'
 import { RequestScope } from '../../utils/request-scope'
-import { FEEDBACK_INTERVAL_TIME } from '../../constants/index'
-import {
-    getTimestampAfterMin, formatTimestamp, isNowMoreThan,
-    InfoMessage, SuccessMessage, ErrorMessage
-} from '../../utils/index'
+import { FEEDBACK_COOLDOWN_MINUTES } from '../../constants/index'
+import { getTimestampAfterMin, formatTimestamp, isNowMoreThan, showMessage } from '../../utils/index'
 import { clearErrorLogs, getErrorReport } from '../../utils/error-logger'
-import { authStore } from '../../modules/auth/store'
 import { commonStore } from '../../modules/common/store'
-import CryptoJS from '../../miniprogram_npm/crypto-js/index'
+import { authService } from '../../modules/auth/service'
 import env from '../../env'
 
 Component({
-    properties: {
-        ifVacation: {
-            type: Boolean,
-            value: false
-        }
-    },
     data: {
         showFeedbackDialog: false,
         feedbackContact: '',
@@ -32,9 +22,18 @@ Component({
     lifetimes: {
         created() {
             this.requestScope = new RequestScope()
+        },
+        detached() {
+            this.requestScope.abortAll()
         }
     },
     methods: {
+        showFeedbackMessage(type, content) {
+            return showMessage(type, content, {
+                context: this,
+                selector: '#feedback-message'
+            })
+        },
         onReportTap() {
             this.triggerEvent('onReportTap')
         },
@@ -46,16 +45,14 @@ Component({
             const nextFeedbackTime = commonStore.FeedbackNextTick
 
             if (!feedbackContent.trim()) {
-                return InfoMessage(this, '#feedback-message', '请先填写反馈内容')
+                return this.showFeedbackMessage('info', '请先填写反馈内容')
             }
 
             if (!isNowMoreThan(nextFeedbackTime)) {
-                return ErrorMessage(this, '#feedback-message', '为避免频繁反馈，请 ' + formatTimestamp(nextFeedbackTime) + ' 后再反馈')
+                return this.showFeedbackMessage('error', '为避免频繁反馈，请 ' + formatTimestamp(nextFeedbackTime) + ' 后再反馈')
             }
 
-            const { username, password } = authStore
-            const wordArr = CryptoJS.enc.Utf8.parse(`${username}:${password}`)
-            const configBase64 = CryptoJS.enc.Base64.stringify(wordArr)
+            const configBase64 = authService.getEncodedCredentials()
             const files = feedbackFiles.map((file) => {
                 const filePath = file.url
                 const fileSuffix = file.name.split('.').slice(-1)[0].toLowerCase()
@@ -76,7 +73,7 @@ Component({
             wx.login({
                 success: async (res) => {
                     if (!res.code) {
-                        return ErrorMessage(this, '#feedback-message', '无法获取 code 值，反馈失败了')
+                        return this.showFeedbackMessage('error', '无法获取 code 值，反馈失败了')
                     }
 
                     try {
@@ -101,12 +98,12 @@ Component({
 
                         this.displayFeedbackDialog()
 
-                        SuccessMessage(this, '#feedback-message', '感谢您的反馈')
+                        this.showFeedbackMessage('success', '感谢您的反馈')
 
-                        commonStore.setFeedbackNextTick(getTimestampAfterMin(FEEDBACK_INTERVAL_TIME))
+                        commonStore.setFeedbackNextTick(getTimestampAfterMin(FEEDBACK_COOLDOWN_MINUTES))
                         clearErrorLogs()
                     } catch (err) {
-                        ErrorMessage(this, '#feedback-message', '关键时刻出问题，反馈失败了')
+                        this.showFeedbackMessage('error', '关键时刻出问题，反馈失败了')
                     } finally {
                         wx.hideLoading()
                     }

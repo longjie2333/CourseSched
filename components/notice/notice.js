@@ -5,65 +5,49 @@ import { commonStore } from '../../modules/common/store'
 import env from '../../env'
 
 Component({
-    options: {
-        pureDataPattern: /^_/
-    },
-    properties: {},
-    data: {
-        _dialogConfig: {},
-        _noticeNoRemind: false,
-        _noticePubdate: '',
-    },
     lifetimes: {
         created() {
             this.requestScope = new RequestScope()
+        },
+        attached() {
             this.getNotice()
+        },
+        detached() {
+            this.requestScope.abortAll()
         }
     },
     methods: {
-        getNotice() {
-            const that = this
+        async getNotice() {
+            let response
 
-            setTimeout(async () => {
-                const noRemind = commonStore.NoticeMarkRead
+            try {
+                response = await request('notice', {
+                    baseUrl: env.opt,
+                    method: RequestMethod.GET,
+                    scope: this.requestScope,
+                })
+            } catch (error) {
+                // 公告是可选内容；请求层已经记录非取消类错误。
+                return
+            }
 
-                try {
-                    const { dialog } = await request('notice', {
-                        baseUrl: env.opt,
-                        method: RequestMethod.GET,
-                        scope: this.requestScope,
-                    })
+            const { dialog } = response || {}
 
-                    if (dialog) {
-                        const { pubdate, ...dialogConfig } = dialog
-                        this.setData({
-                            _dialogConfig: {
-                                context: this,
-                                ...dialogConfig
-                            },
-                            _noticePubdate: pubdate,
-                            _noticeNoRemind: pubdate === noRemind,
-                        })
-                    }
+            if (!dialog) {
+                return
+            }
 
-                    that.showDialog()
-                } catch (err) {
+            const { pubdate, ...dialogConfig } = dialog
 
-                }
-            }, 10)
-        },
-        showDialog() {
-            const { _dialogConfig, _noticeNoRemind, _noticePubdate } = this.data
+            if (pubdate === commonStore.NoticeMarkRead) {
+                return
+            }
 
-            setTimeout(() => {
-                if (_noticeNoRemind) {
-                    return
-                }
-
-                Dialog.confirm(_dialogConfig)
-                  .then(() => {
-                      commonStore.markNoticeRead(_noticePubdate)
-                  })
+            Dialog.confirm({
+                context: this,
+                ...dialogConfig
+            }).then(() => {
+                commonStore.markNoticeRead(pubdate)
             })
         }
     }

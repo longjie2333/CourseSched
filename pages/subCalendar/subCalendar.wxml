@@ -71,27 +71,27 @@
                 </view>
                 <view
                     class="form-item"
-                    wx:if="{{ ifCustom[0] }}"
+                    wx:if="{{ reminders.morning.value === -1 }}"
                 >
                     <t-input
                         t-class="form-inp"
                         type="number"
                         label="上午"
                         suffix="分钟前"
-                        id="tm"
+                        id="morning"
                         bind:change="onCustomChange"
                     />
                 </view>
                 <view
                     class="form-item"
-                    wx:if="{{ ifCustom[1] }}"
+                    wx:if="{{ reminders.afternoon.value === -1 }}"
                 >
                     <t-input
                         t-class="form-inp"
                         type="number"
                         label="下午"
                         suffix="分钟前"
-                        id="ta"
+                        id="afternoon"
                         bind:change="onCustomChange"
                     />
                 </view>
@@ -215,7 +215,7 @@
 
 <t-picker
     visible="{{ pickerVisible }}"
-    value="{{ alarmVal }}"
+    value="{{ [reminders.morning.value, reminders.afternoon.value] }}"
     defaultValue="{{ [ 30 ] }}"
     title="设置提醒时间"
     cancelBtn="取消 "
@@ -236,6 +236,7 @@
     visible="{{ show_login_dialog }}"
     title="获取订阅链接"
     content="需要您的学号和密码来登录教务系统获取课表数据。所填写的信息仅保存在您的微信缓存中！"
+    bind:close="hideLoginDialog"
     bind:onLoggingIn="onLoggingIn"
 />
 

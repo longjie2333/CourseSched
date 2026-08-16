@@ -2,13 +2,11 @@ import { reaction } from 'mobx-miniprogram'
 import { createStoreBindings } from 'mobx-miniprogram-bindings'
 import { authStore } from '../../modules/auth/store'
 import { commonStore } from '../../modules/common/store'
-import { EXAM_WEEKS, VACATION_FROM, VACATION_TO } from '../../constants/index'
-import { showMessage, getThisDate, getThisWeeks } from '../../utils/index'
+import { EXAM_WEEK_INDEXES, VACATION_FROM, VACATION_BEFORE } from '../../constants/index'
+import { showMessage, getThisDate, getCurrentSemesterWeekIndex } from '../../utils/index'
 import { RequestScope } from '../../utils/request-scope'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
 import { RefreshResult, scheduleStore } from '../../modules/schedule/store'
-
-let dontNavToPage = false
 
 Page({
     data: {
@@ -16,7 +14,6 @@ Page({
         courseList: null,
         examList: [],
         startingDate: '',
-        scheduleLoad: { status: 'idle' },
         currentLabelData: {},
         showExamTimeLoading: true,
         showExamTimeLoadFail: false,
@@ -44,7 +41,6 @@ Page({
                 courseList: store => store.courseList,
                 examList: store => store.examList,
                 startingDate: store => store.startingDate,
-                scheduleLoad: store => store.scheduleLoad,
                 currentLabelData: store => (store.labelData && store.labelData[store.startingDate]) || {},
                 showExamTimeLoading: store => store.examLoad.status === 'idle' || store.examLoad.status === 'loading',
                 showExamTimeLoadFail: store => store.examLoad.status === 'error'
@@ -90,7 +86,7 @@ Page({
         }
     },
     currentWeek() {
-        const weeks = scheduleStore.startingDate ? getThisWeeks(scheduleStore.startingDate) : 0
+        const weeks = scheduleStore.startingDate ? getCurrentSemesterWeekIndex(scheduleStore.startingDate) : 0
 
         return typeof weeks === 'number' ? weeks : 0
     },
@@ -102,14 +98,12 @@ Page({
             showMessage('error', error instanceof Error ? error.message : '请求失败')
 
             if (result === RefreshResult.AuthRequired) {
-                dontNavToPage = true
                 return this.displayLoginDialog()
             }
 
             return
         }
 
-        dontNavToPage = false
     },
     initializeScheduleView() {
         if (!scheduleStore.startingDate) {
@@ -117,12 +111,18 @@ Page({
         }
 
         const weeks = this.currentWeek()
-        const isVacation = Boolean(weeks >= VACATION_FROM || weeks < VACATION_TO)
+        const isVacation = Boolean(weeks >= VACATION_FROM || weeks < VACATION_BEFORE)
+
+        const weekData = this.changeWeeksIndex(weeks)
 
         this.setData({
             isVacation,
-            ...this.changeWeeksIndex(weeks)
+            ...weekData
         })
+
+        if (weekData.isExamWeek) {
+            this.getExamTime()
+        }
 
         if (isVacation) {
             const period = weeks >= VACATION_FROM ? 'after' : 'before'
@@ -154,24 +154,24 @@ Page({
             await this.getExamTime()
         }
     },
-    async checkStateVar(data = null) {
-        const { isExamWeek } = {
-            ...this.data,
-            ...data
-        }
-
-        if (isExamWeek) {
-            await this.getExamTime()
-        }
-    },
     displayLoginDialog() {
         this.setData({
             show_login_dialog: true
         })
     },
+    hideLoginDialog() {
+        this.setData({
+            show_login_dialog: false
+        })
+    },
     displayManualUpdateDialog() {
         this.setData({
             show_manual_update_dialog: true
+        })
+    },
+    hideManualUpdateDialog() {
+        this.setData({
+            show_manual_update_dialog: false
         })
     },
     displaySomeDetail(e) {
@@ -185,12 +185,22 @@ Page({
             }
         })
     },
+    hideDetailPopup() {
+        this.setData({
+            show_detail_popup: false
+        })
+    },
     displayLabelPopup(e) {
         const { labelId } = e.detail
 
         this.setData({
             show_label_popup: true,
             labelId
+        })
+    },
+    hideLabelPopup() {
+        this.setData({
+            show_label_popup: false
         })
     },
     async onLoggingIn(e) {
@@ -219,10 +229,8 @@ Page({
 
         const newData = {
             currentWeeksIndex: newWeeksIndex,
-            isExamWeek: EXAM_WEEKS.includes(newWeeksIndex)
+            isExamWeek: EXAM_WEEK_INDEXES.includes(newWeeksIndex)
         }
-
-        this.checkStateVar(newData)
 
         return newData
     },
@@ -235,20 +243,31 @@ Page({
         })
     },
     onRollback() {
+        const weekData = this.changeWeeksIndex(this.currentWeek())
+
         this.setData({
-            ...this.changeWeeksIndex(this.currentWeek()),
+            ...weekData,
             ifWeeksChanging: false,
             show_tabs_tag: false
         })
+
+        if (weekData.isExamWeek) {
+            this.getExamTime()
+        }
     },
     onTabsChangeOrSliding(e) {
         const { value } = e.detail
+        const weekData = this.changeWeeksIndex(value)
 
         this.setData({
-            ...this.changeWeeksIndex(value),
+            ...weekData,
             ifWeeksChanging: this.currentWeek() !== value,
             show_tabs_tag: this.currentWeek() !== value
         })
+
+        if (weekData.isExamWeek) {
+            this.getExamTime()
+        }
     },
     calcNavbarStyle() {
         if (!wx.getMenuButtonBoundingClientRect || !systemInfo) {
@@ -278,8 +297,6 @@ Page({
         await this.loadExamTime(this.requestScope)
     },
     navigateToReport() {
-        if (dontNavToPage) return false
-
         if (scheduleStore.scheduleLoad.status === 'error') return false
 
         if (!authStore.hasSession) {
