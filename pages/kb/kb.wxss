@@ -21,6 +21,7 @@ page {
     border-radius: var(--td-radius-default);
     font-size: small;
     text-align: center;
+    line-height: initial;
 }
 
 .weekRow .today {
@@ -32,6 +33,16 @@ page {
 .weekRow .weekRowDate {
     font-size: 10px;
     margin-top: 2px;
+}
+
+.risk {
+    color: var(--td-text-color-disabled);
+    font-size: 26rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    gap: 5px;
 }
 
 .t-tabs__item-inner {

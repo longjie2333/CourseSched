@@ -1,31 +1,25 @@
-import request from '../../utils/request'
-import { courseService } from '../../services/course'
-import { authService } from '../../services/auth'
-import { EXAM_WEEKS, STORE_KEY, VACATION_FROM, VACATION_TO, WEEK_TITLES } from '../../constants/index'
-import { InfoMessage, SuccessMessage, getThisDate, getThisWeeks, getThisDay } from '../../utils/index'
-import { buildCourseMap, formatCourseData, genForRenderData } from '../../utils/course'
-import { collectBreadcrumb, collectErrorLog } from '../../utils/error-logger'
+import { reaction } from 'mobx-miniprogram'
+import { createStoreBindings } from 'mobx-miniprogram-bindings'
+import { authStore } from '../../modules/auth/store'
+import { commonStore } from '../../modules/common/store'
+import { EXAM_WEEK_INDEXES, VACATION_FROM, VACATION_BEFORE } from '../../constants/index'
+import { showMessage, getThisDate, getCurrentSemesterWeekIndex } from '../../utils/index'
+import { RequestScope } from '../../utils/request-scope'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
-
-let isExamTimeLoading = false
-let dontNavToPage = false
+import { RefreshResult, scheduleStore } from '../../modules/schedule/store'
 
 Page({
     data: {
-        cacheData: {
-            clas: '',
-            detail: [],
-            startingDate: '',
-        },
-        renderData: [],
-        examTimeData: [],
-        labelData: {},
+        className: '',
+        courseList: null,
+        examList: [],
+        startingDate: '',
+        currentLabelData: {},
+        showExamTimeLoading: true,
+        showExamTimeLoadFail: false,
         detailContent: {},
         labelId: '',
-        weekTitles: WEEK_TITLES,
         ifToday: '',
-        ifThisWeek: 1,
-        ifThisWeeks: 0,
         ifWeeksChanging: false,
         isExamWeek: false,
         isVacation: false,
@@ -35,153 +29,149 @@ Page({
         show_tabs_tag: false,
         show_detail_popup: false,
         show_label_popup: false,
-        show_exam_time_loading: true,
-        show_exam_time_loadFail: false,
         navbarStyle: ''
     },
-    async onLoad(query) {
+    onLoad(query) {
+        this.requestScope = new RequestScope()
+
+        this.storeBindings = createStoreBindings(this, {
+            store: scheduleStore,
+            fields: {
+                className: store => store.className,
+                courseList: store => store.courseList,
+                examList: store => store.examList,
+                startingDate: store => store.startingDate,
+                currentLabelData: store => (store.labelData && store.labelData[store.startingDate]) || {},
+                showExamTimeLoading: store => store.examLoad.status === 'idle' || store.examLoad.status === 'loading',
+                showExamTimeLoadFail: store => store.examLoad.status === 'error'
+            },
+            actions: {
+                loadSchedule: 'loadSchedule',
+                loadExamTime: 'loadExamTime',
+                clearSchedule: 'clear'
+            }
+        })
+
+        this.stopRefreshWatch = reaction(
+            () => scheduleStore.refreshed,
+            (result) => {
+                if (result === RefreshResult.Updated) {
+                    this.initializeScheduleView()
+                    showMessage('success', '课程表已更新')
+                }
+            }
+        )
+
         wx.showLoading({
             title: '加载中',
-            mask: true,
+            mask: true
         })
 
         this.calcNavbarStyle()
         this.setData({
-            ifToday: getThisDate(),
-            ifThisWeek: getThisDay()
+            ifToday: getThisDate()
         })
 
-        await this.loadData()
-        await this.loadLabelData()
-        await this.initStateVar()
-        await this.handleData()
-
-        wx.hideLoading()
+        this.loadPage()
     },
-    async loadData() {
-        const that = this
-        const data = await courseService.getCache(this, {
-            async onUpdateCallback(updatedData) {
-                wx.navigateBack()
-                await that.handleData(updatedData)
-                SuccessMessage(that, '#t-message', '课表已更新')
-            }
-        })
+    async loadPage() {
+        try {
+            await this.loadData()
 
-        if (!data) {
+            if (scheduleStore.scheduleLoad.status !== 'error') {
+                this.initializeScheduleView()
+            }
+        } finally {
+            wx.hideLoading()
+        }
+    },
+    currentWeek() {
+        const weeks = scheduleStore.startingDate ? getCurrentSemesterWeekIndex(scheduleStore.startingDate) : 0
+
+        return typeof weeks === 'number' ? weeks : 0
+    },
+    async loadData(options = {}) {
+        const result = await this.loadSchedule(this.requestScope, options)
+
+        if (scheduleStore.scheduleLoad.status === 'error') {
+            const error = scheduleStore.scheduleLoad.error
+            showMessage('error', error instanceof Error ? error.message : '请求失败')
+
+            if (result === RefreshResult.AuthRequired) {
+                return this.displayLoginDialog()
+            }
+
             return
         }
 
-        const { startingDate, ...otherData } = data
-
-        if (Object.keys(otherData).length === 0) {
-            this.setData({
-                'cacheData.startingDate': startingDate
-            })
-
-            dontNavToPage = true
-            return this.displayLoginDialog()
+    },
+    initializeScheduleView() {
+        if (!scheduleStore.startingDate) {
+            return
         }
 
-        dontNavToPage = false
+        const weeks = this.currentWeek()
+        const isVacation = Boolean(weeks >= VACATION_FROM || weeks < VACATION_BEFORE)
 
-        const { clas, detail } = data
+        const weekData = this.changeWeeksIndex(weeks)
 
         this.setData({
-            cacheData: { clas, detail, startingDate },
+            isVacation,
+            ...weekData
         })
-    },
-    async loadLabelData() {
-        const { startingDate } = this.data.cacheData
 
-        await new Promise(resolve => {
-            const labelData = wx.getStorageSync(STORE_KEY.LABEL_DATA)
-
-            this.setData({
-                labelData: labelData[startingDate] || {}
-            }, () => {
-                resolve()
-            })
-        })
-    },
-    async initStateVar() {
-        await new Promise(resolve => {
-            const { startingDate } = this.data.cacheData
-            const ifThisWeeks = getThisWeeks(startingDate)
-            const isVacation = Boolean(ifThisWeeks >= VACATION_FROM || ifThisWeeks < VACATION_TO)
-            const stateVar = { ifThisWeeks, isVacation }
-
-            this.setData({
-                ...stateVar, ...this.changeWeeksIndex(ifThisWeeks),
-            }, () => {
-                resolve()
-
-                if (isVacation) {
-                    this.navigateToReport()
-                }
-            })
-        })
-    },
-    async checkStateVar(data = null) {
-        const { isExamWeek } = {
-            ...this.data,
-            ...data
+        if (weekData.isExamWeek) {
+            this.getExamTime()
         }
 
-        if (isExamWeek) {
+        if (isVacation) {
+            const period = weeks >= VACATION_FROM ? 'after' : 'before'
+            const vacationKey = `${period}:${scheduleStore.startingDate}`
+
+            if (vacationKey !== commonStore.ReportAutoShown && this.navigateToReport()) {
+                commonStore.markReportAutoShown(vacationKey)
+            }
+        }
+    },
+    async refreshSchedule(options = {}) {
+        if (options.clear) {
+            await this.clearSchedule()
+        }
+
+        await this.loadData({ force: true })
+
+        if (scheduleStore.scheduleLoad.status === 'error') {
+            return
+        }
+
+        this.initializeScheduleView()
+
+        if (options.successMessage) {
+            showMessage('success', options.successMessage)
+        }
+
+        if (options.reloadExam && this.data.isExamWeek) {
             await this.getExamTime()
         }
     },
-    async handleData(data = null) {
-        const { cacheData } = this.data
-        const { startingDate, detail, clas } = data || cacheData
-
-        await new Promise(async (resolve) => {
-            if (detail.length === 0) {
-                collectBreadcrumb('course_render_empty', { startingDate })
-                return resolve()
-            }
-
-            try {
-                const formatted = formatCourseData(detail)
-                const courseMap = buildCourseMap(formatted)
-                const renderData = genForRenderData(courseMap, startingDate)
-
-                this.setData({
-                    renderData,
-                    cacheData: {
-                        clas: clas,
-                        detail: detail,
-                        startingDate: startingDate,
-                    }
-                }, () => {
-                    collectBreadcrumb('course_render_ready', {
-                        detailLength: detail.length,
-                        renderDataLength: renderData.length,
-                        startingDate,
-                    })
-                    this.initStateVar()
-                    wx.hideLoading()
-                    resolve()
-                })
-            } catch (err) {
-                collectErrorLog('course_render_failed', err, {
-                    detailLength: detail.length,
-                    startingDate,
-                    firstCourse: detail[0] || null,
-                })
-                resolve()
-            }
-        })
-    },
     displayLoginDialog() {
         this.setData({
-            show_login_dialog: true,
+            show_login_dialog: true
+        })
+    },
+    hideLoginDialog() {
+        this.setData({
+            show_login_dialog: false
         })
     },
     displayManualUpdateDialog() {
         this.setData({
-            show_manual_update_dialog: true,
+            show_manual_update_dialog: true
+        })
+    },
+    hideManualUpdateDialog() {
+        this.setData({
+            show_manual_update_dialog: false
         })
     },
     displaySomeDetail(e) {
@@ -195,6 +185,11 @@ Page({
             }
         })
     },
+    hideDetailPopup() {
+        this.setData({
+            show_detail_popup: false
+        })
+    },
     displayLabelPopup(e) {
         const { labelId } = e.detail
 
@@ -203,49 +198,39 @@ Page({
             labelId
         })
     },
+    hideLabelPopup() {
+        this.setData({
+            show_label_popup: false
+        })
+    },
     async onLoggingIn(e) {
         const { done } = e.detail
 
-        await wx.removeStorage({
-            key: STORE_KEY.CACHE_DATA,
-        })
-
-        await this.loadData()
-        await this.initStateVar()
-        await this.handleData()
-
-        done()
+        try {
+            await this.refreshSchedule({ clear: true })
+        } finally {
+            done()
+        }
     },
     async onManualUpdate(e) {
         const { done } = e.detail
-        const that = this
 
-        await courseService.getCache(this, {
-            autoUpdate: false,
-            nothingCallback() {
-                InfoMessage(that, '#t-message', '已经是最新的课表')
-            },
-            async onUpdateCallback(updatedData) {
-                await that.handleData(updatedData)
-                SuccessMessage(that, '#t-message', '课表已更新')
-            }
-        })
-
-        if (this.data.isExamWeek) {
-            await this.getExamTime()
+        try {
+            await this.refreshSchedule({
+                reloadExam: true,
+                successMessage: '手动更新课表成功'
+            })
+        } finally {
+            done()
         }
-
-        done()
     },
     changeWeeksIndex(newWeeksIndex) {
         newWeeksIndex = newWeeksIndex > 19 || newWeeksIndex < 0 ? 0 : newWeeksIndex
 
         const newData = {
             currentWeeksIndex: newWeeksIndex,
-            isExamWeek: EXAM_WEEKS.includes(newWeeksIndex),
+            isExamWeek: EXAM_WEEK_INDEXES.includes(newWeeksIndex)
         }
-
-        this.checkStateVar(newData)
 
         return newData
     },
@@ -258,44 +243,45 @@ Page({
         })
     },
     onRollback() {
-        const { ifThisWeeks } = this.data
+        const weekData = this.changeWeeksIndex(this.currentWeek())
 
         this.setData({
-            ...this.changeWeeksIndex(ifThisWeeks),
+            ...weekData,
             ifWeeksChanging: false,
-            show_tabs_tag: false,
+            show_tabs_tag: false
         })
+
+        if (weekData.isExamWeek) {
+            this.getExamTime()
+        }
     },
     onTabsChangeOrSliding(e) {
-        const { ifThisWeeks } = this.data
         const { value } = e.detail
+        const weekData = this.changeWeeksIndex(value)
 
         this.setData({
-            ...this.changeWeeksIndex(value),
-            ifWeeksChanging: ifThisWeeks !== value,
-            show_tabs_tag: ifThisWeeks !== value,
+            ...weekData,
+            ifWeeksChanging: this.currentWeek() !== value,
+            show_tabs_tag: this.currentWeek() !== value
         })
-    },
-    async onLabelUpdate(e) {
-        const { hasUpdated } = e.detail
 
-        if (hasUpdated) {
-            await this.loadLabelData()
+        if (weekData.isExamWeek) {
+            this.getExamTime()
         }
     },
     calcNavbarStyle() {
         if (!wx.getMenuButtonBoundingClientRect || !systemInfo) {
-            return;
+            return
         }
 
-        const menuRect = wx.getMenuButtonBoundingClientRect();
+        const menuRect = wx.getMenuButtonBoundingClientRect()
         const navbarStyleVar = {
             'height-full': `${2 * menuRect.top - systemInfo.statusBarHeight + menuRect.height}px`,
             'height': `${(menuRect.top - systemInfo.statusBarHeight) * 2 + menuRect.height}px`,
             'padding-top': `${systemInfo.statusBarHeight}px`,
             'right': `${systemInfo.windowWidth - menuRect.left}px`,
             'capsule-height': `${menuRect.height}px`,
-            'capsule-width': `${menuRect.width}px`,
+            'capsule-width': `${menuRect.width}px`
         }
 
         Object.keys(navbarStyleVar).forEach(key => {
@@ -308,69 +294,26 @@ Page({
         })
     },
     async getExamTime() {
-        if (isExamTimeLoading || this.data.examTimeData.length !== 0) {
-            return
-        }
-
-        if (!this.data.show_exam_time_loading) {
-            this.setData({
-                show_exam_time_loading: true,
-                show_exam_time_loadFail: false
-            })
-        }
-
-        isExamTimeLoading = true
-
-        try {
-            const data = await request('examtime', this)
-
-            data.sort((a, b) => {
-                const periodA = parseInt(a.exam_period)
-                const periodB = parseInt(b.exam_period)
-
-                if (periodA !== periodB) {
-                    return periodA - periodB
-                }
-
-                const weekA = parseInt(a.week)
-                const weekB = parseInt(b.week)
-                return weekA - weekB
-            })
-
-            this.setData({
-                examTimeData: data || [],
-                show_exam_time_loading: false,
-                show_exam_time_loadFail: false
-            })
-
-            isExamTimeLoading = false
-        } catch(err) {
-            this.setData({
-                examTimeData: [],
-                show_exam_time_loading: false,
-                show_exam_time_loadFail: true
-            })
-
-            setTimeout(() => {
-                isExamTimeLoading = false
-            }, 3000)
-        }
+        await this.loadExamTime(this.requestScope)
     },
     navigateToReport() {
-        if (dontNavToPage) return
+        if (scheduleStore.scheduleLoad.status === 'error') return false
 
-        if (!authService.isLoggedIn()) {
-            InfoMessage(this, '#t-message', '请先填写学号和密码，以便查看学期报告')
-            return this.displayLoginDialog()
+        if (!authStore.hasSession) {
+            showMessage('info', '请先填写学号和密码，以便查看学期报告')
+            this.displayLoginDialog()
+            return false
         }
 
         wx.navigateTo({
-            url: '/pages/report/report?isVacation=' + this.data.isVacation,
+            url: '/pages/report/report'
         })
+
+        return true
     },
     navigateToSubCalendar() {
         wx.navigateTo({
-            url: '/pages/subCalendar/subCalendar',
+            url: '/pages/subCalendar/subCalendar'
         })
     },
     onShareAppMessage() {
@@ -380,4 +323,17 @@ Page({
             imageUrl: '../../images/cover.png'
         }
     },
+    onUnload() {
+        if (this.requestScope) {
+            this.requestScope.abortAll()
+        }
+
+        if (this.storeBindings) {
+            this.storeBindings.destroyStoreBindings()
+        }
+
+        if (this.stopRefreshWatch) {
+            this.stopRefreshWatch()
+        }
+    }
 })

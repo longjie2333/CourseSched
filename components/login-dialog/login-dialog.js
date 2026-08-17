@@ -1,5 +1,6 @@
-import { authService } from '../../services/auth'
-import { ErrorMessage } from '../../utils/index'
+import { authStore } from '../../modules/auth/store'
+import { clearAppData } from '../../modules/app/clear-data'
+import { showMessage } from '../../utils/index'
 
 Component({
     properties: {
@@ -25,35 +26,38 @@ Component({
     },
     lifetimes: {
         attached() {
-            this.setData({
-                ifLoggedIn: authService.isLoggedIn(),
-                config: authService.getConfig()
-            })
+            this.syncCredentials()
         }
     },
     pageLifetimes: {
         show() {
-            this.setData({
-                ifLoggedIn: authService.isLoggedIn(),
-                config: authService.getConfig()
-            })
+            this.syncCredentials()
         }
     },
     methods: {
-        displayLoginDialog() {
+        syncCredentials() {
             this.setData({
-                visible: !this.data.visible,
+                ifLoggedIn: authStore.hasSession,
+                config: {
+                    username: authStore.username,
+                    password: authStore.password
+                }
             })
         },
+        closeDialog() {
+            this.triggerEvent('close')
+        },
         clearLogin() {
-            authService.clearAuth()
+            clearAppData()
 
             this.setData({
-                visible: false,
                 ifLoggedIn: false,
-                'config.username': '',
-                'config.password': '',
+                config: {
+                    username: '',
+                    password: ''
+                }
             })
+            this.closeDialog()
 
             wx.restartMiniProgram({
                 path: '/pages/kb/kb'
@@ -63,7 +67,10 @@ Component({
             const { username, password } = this.data.config
 
             if (username === '' || password === '') {
-                return ErrorMessage(this, '#login-message', '学号或密码不能为空')
+                return showMessage('error', '学号或密码不能为空', {
+                    context: this,
+                    selector: '#login-message'
+                })
             }
 
             try {
@@ -72,24 +79,23 @@ Component({
                     mask: true
                 })
 
-                authService.setConfig(username, password)
-
-                this.setData({
-                    visible: false
-                })
+                authStore.setCredentials(username, password)
+                this.closeDialog()
 
                 this.triggerEvent('onLoggingIn', {
-                    username, password,
                     done: () => {
                         this.setData({
-                            ifLoggedIn: authService.isLoggedIn()
+                            ifLoggedIn: authStore.hasSession
                         })
 
                         wx.hideLoading()
                     }
                 })
             } catch (err) {
-                ErrorMessage(this, '#login-message', '获取时发生错误')
+                showMessage('error', '获取时发生错误', {
+                    context: this,
+                    selector: '#login-message'
+                })
                 wx.hideLoading()
             }
         },

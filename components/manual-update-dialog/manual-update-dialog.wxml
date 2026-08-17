@@ -14,7 +14,7 @@
             label="每"
             suffix="天更新一次"
             align="center"
-            value="{{ updateIntervalTime }}"
+            value="{{ updateIntervalDays }}"
             bind:change="onUpdateIntervalChange"
         />
         <t-button

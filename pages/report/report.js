@@ -1,173 +1,241 @@
-import { reportService } from '../../services/report'
-import { calcPercentage } from '../../utils/index'
-import { WEEK_TITLES } from '../../constants/index'
+import { reaction } from 'mobx-miniprogram'
+import { createStoreBindings } from 'mobx-miniprogram-bindings'
+import { EXAM_WEEK_INDEXES, VACATION_FROM, VACATION_BEFORE, WEEK_TITLES } from '../../constants/index'
+import { scheduleStore } from '../../modules/schedule/store'
+import { reportStore } from '../../modules/report/store'
+import { RequestScope } from '../../utils/request-scope'
+import { getCurrentSemesterWeekIndex, showMessage } from '../../utils/index'
 
-let currProgress = 0
-let animationTimer = null
-let antishake = false
+const emptyInfo = { sid: '', name: '', department: '', class: '', avatar: '' }
+const emptyAttendanceStatistics = { late: 0, leave_early: 0, leave: 0, absent: 0, online: 0, official_leave: 0 }
 
 Page({
     data: {
-        reportData: {
-            info: {},
-            examScore: [],
-            attendance: {
-                statistics: {
-                    late: 0,           // 迟到
-                    leave_early: 0,    // 早退
-                    leave: 0,          // 请假
-                    absent: 0,         // 旷课
-                    online: 0,         // 网上到课
-                    official_leave: 0  // 请公假
-                },
-                data: []
-            },
-            leaveHistory: []
-        },
+        info: null,
+        examScore: null,
+        attendance: null,
+        leaveHistory: null,
+        reportLoad: { status: 'idle' },
         weekTitles: WEEK_TITLES,
-        ifLoadFail: false,
-        isVacation: false,
-        errorMessage: '生成报告中',
-        currPercentage: 0,
-        currSemester: 0,
-        show_semester_report_loading: true,
+        currSemester: -1,
+        displayedSemesterNumber: 0,
+        currentExamEmptyText: '',
         show_leave_history_more: false,
+        show_attendance_more: false,
+        reportTitle: '你哪个班的？',
+        reportInfo: emptyInfo,
+        semesterReports: [],
+        currentExamScores: [],
+        attendanceStatistics: emptyAttendanceStatistics,
+        attendanceRecords: [],
+        leaveRecords: [],
+        loadErrorMessage: '',
+        welcomeInfoRowCol: [{ width: '45%', height: '20px' }],
+        welcomeExamRowCol: [{ width: '80%', height: '20px' }],
     },
-    async onLoad(query) {
-        const { isVacation } = query
+    onLoad(query) {
+        this.requestScope = new RequestScope()
 
-        this.setData({
-            isVacation: isVacation.toLowerCase() === 'true',
+        this.storeBindings = createStoreBindings(this, {
+            store: reportStore,
+            fields: {
+                info: store => store.info,
+                examScore: store => store.examScore,
+                attendance: store => store.attendance,
+                leaveHistory: store => store.leaveHistory,
+                reportLoad: store => store.reportLoad,
+            },
+            actions: {
+                loadReport: 'loadReport'
+            }
         })
 
-        await this.getSemesterReport()
-    },
-    onManualUpdateTap() {
-        this.setData({
-            errorMessage: '重新生成报告中'
-        }, async () => {
-            await this.getSemesterReport()
-        })
-    },
-    async getSemesterReport() {
-        const { errorMessage, isVacation } = this.data
+        this.disposeDerivedReaction = reaction(
+            () => [
+                reportStore.info,
+                reportStore.examScore,
+                reportStore.leaveHistory,
+                reportStore.reportLoad,
+                scheduleStore.startingDate,
+            ],
+            () => {
+                this.refreshDerived()
+            }
+        )
 
-        if (antishake) {
+        this.getSemesterReport()
+    },
+    onUnload() {
+        if (this.requestScope) {
+            this.requestScope.abortAll()
+        }
+
+        if (this.disposeDerivedReaction) {
+            this.disposeDerivedReaction()
+        }
+
+        if (this.storeBindings) {
+            this.storeBindings.destroyStoreBindings()
+        }
+    },
+    getErrorMessage(error) {
+        const message = error && error.errMsg
+            ? error.errMsg
+            : error instanceof Error
+                ? error.message
+                : typeof error === 'string'
+                    ? error
+                    : '生成报告失败'
+
+        return message.includes('request:fail') ? '网络异常' : message
+    },
+    getSemesterCount() {
+        const scores = Array.isArray(reportStore.examScore) ? reportStore.examScore : []
+        const currentWeeks = scheduleStore.startingDate ? getCurrentSemesterWeekIndex(scheduleStore.startingDate) : null
+        const isVacation = typeof currentWeeks === 'number' &&
+            (currentWeeks >= VACATION_FROM || currentWeeks < VACATION_BEFORE)
+
+        // 假期停留在最新有成绩学期，开学前一周起与学期中显示新学期
+        return Math.max(isVacation ? scores.length : scores.length + 1, 1)
+    },
+    getSemesterString(index) {
+        const semesters = (reportStore.attendance && Array.isArray(reportStore.attendance.semester))
+            ? reportStore.attendance.semester
+            : []
+
+        return semesters[index] || ''
+    },
+    async loadAttendanceForSemester(index, reuseCurrent = false) {
+        const semester = this.getSemesterString(index)
+
+        if (!semester) {
             return
         }
 
-        if (!['生成报告中', '重新生成报告中'].includes(errorMessage)) {
-            this.setData({
-                errorMessage: '生成报告中'
-            })
+        if (reuseCurrent) {
+            reportStore.cacheAttendance(semester)
+            return
         }
-
-        antishake = true
-        currProgress = 0
-
-        this.setData({
-            currPercentage: 0,
-            ifLoadFail: false,
-            show_semester_report_loading: true,
-        })
-
-        setTimeout(() => {
-            this.inProgress()
-        }, 666)
 
         try {
-            await reportService.getFullReport(this, {
-                inProgressCallback: () => {
-                    this.inProgress()
-                },
-                doneCallback: (result) => {
-                    this.inProgress(() => {
-                        if (!isVacation) {
-                            result.examScore = [
-                                ...result.examScore,
-                                undefined
-                            ]
-                        }
+            await reportStore.loadAttendance(this.requestScope, semester)
+        } catch (error) {
+            showMessage('error', '考勤加载失败')
+            return
+        }
 
-                        this.setData({
-                            reportData: result,
-                            currPercentage: 0,
-                            currSemester: result.examScore.length - 1,
-                            show_semester_report_loading: false,
-                        })
-                    })
-                }
-            })
-        } catch (err) {
-            err = err.errMsg || err.message || err
-
-            if (err.indexOf('request:fail') !== -1) {
-                err = '网络异常'
-            }
-
-            this.setData({
-                ifLoadFail: true,
-                errorMessage: err,
-            })
-        } finally {
-            antishake = false
+        if (this.data.currSemester === index) {
+            this.refreshDerived()
         }
     },
-    inProgress(callback = null) {
-        const AnimationFunc = (t) => {
-            // ease-in-quad
-            return t * t
-        }
+    buildSemesterReports() {
+        const scores = Array.isArray(reportStore.examScore) ? reportStore.examScore : []
+        const length = this.getSemesterCount()
 
-        // 清除之前的动画
-        if (animationTimer !== null) {
-            clearInterval(animationTimer)
-            animationTimer = null
-        }
-
-        // 记录动画起始状态
-        const startTime = Date.now()
-        const startPercentage = this.data.currPercentage
-        const targetPercentage = calcPercentage(Math.min(++currProgress, 5), 5, 0)
-
-        // 动画持续时间（毫秒）
-        const duration = 800
-
-        animationTimer = setInterval(() => {
-            const elapsed = Date.now() - startTime
-            const progress = Math.min(elapsed / duration, 1) // 0 到 1
-
-            // 应用缓动函数
-            const easedProgress = AnimationFunc(progress)
-
-            // 计算当前百分比
-            const currentPercentage = Math.min(
-                Math.round(startPercentage + (targetPercentage - startPercentage) * easedProgress),
-                100
-            )
-
-            this.setData({
-                currPercentage: currentPercentage
-            })
-
-            // 动画完成
-            if (progress >= 1) {
-                clearInterval(animationTimer)
-                animationTimer = null
-                callback && callback()
-            }
-        }, 33)
+        return Array.from({ length }, (_, index) => ({
+            semester: index + 1,
+            scores: (scores[index] && scores[index].scores) || [],
+        }))
     },
-    onChangeSemester(e) {
-        const { index } = e.target.dataset
+    refreshDerived() {
+        const { info, attendance, leaveHistory, reportLoad } = reportStore
+        const semesterReports = this.buildSemesterReports()
+        const lastSemesterIndex = Math.max(semesterReports.length - 1, 0)
+        const autoSemesterIndex = this.getDefaultSemesterIndex()
+        const currentSemesterIndex = this.data.currSemester >= 0
+            ? Math.min(this.data.currSemester, lastSemesterIndex)
+            : autoSemesterIndex
+        const currentSemester = semesterReports[currentSemesterIndex] || {}
+        const currentExamScores = currentSemester.scores || []
+        const currentWeeks = scheduleStore.startingDate ? getCurrentSemesterWeekIndex(scheduleStore.startingDate) : null
+        const currentSemesterNumber = this.getSemesterCount()
+        const isCurrentSemester = currentSemesterNumber === currentSemester.semester
+        const isExamWeek = typeof currentWeeks === 'number' && EXAM_WEEK_INDEXES.includes(currentWeeks)
+        const attendanceStatistics = (attendance && attendance.statistics) || emptyAttendanceStatistics
+        const attendanceRecords = (attendance && attendance.data) || []
+        const leaveRecords = leaveHistory || []
 
         this.setData({
-            currSemester: index
+            reportTitle: (info && info.class) || '你哪个班的？',
+            reportInfo: info || emptyInfo,
+            semesterReports,
+            displayedSemesterNumber: autoSemesterIndex + 1,
+            currentExamScores,
+            currentExamEmptyText: currentExamScores.length === 0
+                ? isCurrentSemester
+                    ? isExamWeek
+                        ? '正在阅卷评分中'
+                        : '这学期还未开始考试'
+                    : '该学期暂无成绩记录'
+                : '',
+            attendanceStatistics,
+            attendanceRecords,
+            leaveRecords,
+            loadErrorMessage: reportLoad.status === 'error' ? this.getErrorMessage(reportLoad.error) : '',
         })
+    },
+    getDefaultSemesterIndex() {
+        const currentWeeks = scheduleStore.startingDate ? getCurrentSemesterWeekIndex(scheduleStore.startingDate) : null
+        const isVacation = typeof currentWeeks === 'number' &&
+            (currentWeeks >= VACATION_FROM || currentWeeks < VACATION_BEFORE)
+
+        if (isVacation) {
+            const semesterReports = this.buildSemesterReports()
+
+            for (let index = semesterReports.length - 1; index >= 0; index--) {
+                if ((semesterReports[index].scores || []).length > 0) {
+                    return index
+                }
+            }
+
+            return 0
+        }
+
+        return Math.max(this.getSemesterCount() - 1, 0)
+    },
+    async getSemesterReport() {
+        if (reportStore.reportLoad.status === 'loading') {
+            return
+        }
+
+        this.setData({
+            currSemester: -1,
+            show_leave_history_more: false,
+            show_attendance_more: false,
+        })
+
+        await this.loadReport(this.requestScope)
+
+        const defaultIndex = this.getDefaultSemesterIndex()
+
+        this.setData({
+            currSemester: defaultIndex,
+        })
+
+        this.refreshDerived()
+        await this.loadAttendanceForSemester(defaultIndex, true)
+    },
+    onManualUpdateTap() {
+        this.getSemesterReport()
+    },
+    async onChangeSemester(e) {
+        const index = Number(e.target.dataset.index)
+
+        this.setData({
+            currSemester: index,
+        })
+
+        this.refreshDerived()
+        await this.loadAttendanceForSemester(index)
     },
     showLeaveHistory() {
         this.setData({
-            show_leave_history_more: !this.data.show_leave_history_more
+            show_leave_history_more: !this.data.show_leave_history_more,
+        })
+    },
+    showAttendanceMore() {
+        this.setData({
+            show_attendance_more: !this.data.show_attendance_more,
         })
     },
 })

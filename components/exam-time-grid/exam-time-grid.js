@@ -13,7 +13,7 @@ Component({
             type: Number,
             value: 18
         },
-        examTimeData: {
+        examList: {
             type: Array,
             value: []
         },
@@ -38,7 +38,7 @@ Component({
             }
 
             const [ type, index ] = id.split('.')
-            const data = this.data.examTimeData[index]
+            const data = this.data.examList[index]
 
             this.triggerEvent('onExamItemTap', {
                 type, data

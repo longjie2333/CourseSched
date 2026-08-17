@@ -3,8 +3,7 @@
 }
 
 .navbar-toolbar .navbar-tool {
-    --td-tag-large-height: 64rpx;
-
+    height: 62rpx;
     margin-left: 4px;
     z-index: 99;
 }

@@ -15,6 +15,7 @@
 .classCell, .timeCell {
     font-size: small;
     text-align: center;
+    line-height: initial;
 }
 
 .classCell, .timeCell {

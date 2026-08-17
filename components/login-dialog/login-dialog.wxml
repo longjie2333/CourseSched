@@ -35,7 +35,7 @@
         <t-button
             class="loginBtn"
             theme="light"
-            bind:tap="displayLoginDialog"
+            bind:tap="closeDialog"
         >取消</t-button>
         <t-button
             class="loginBtn"

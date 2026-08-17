@@ -16,9 +16,7 @@ Component({
     },
     methods: {
         hiddenPopup() {
-            this.setData({
-                visible: false
-            })
+            this.triggerEvent('close')
         }
     }
 })

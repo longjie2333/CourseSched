@@ -9,11 +9,3 @@ DS_Store
 
 env.js
 project.private.config.json
-
-# 保留二次修改的第三方组件
-miniprogram_npm/tdesign-miniprogram/*
-miniprogram_npm/tdesign-miniprogram/tabs/*
-!miniprogram_npm/tdesign-miniprogram
-!miniprogram_npm/tdesign-miniprogram/tabs/
-!miniprogram_npm/tdesign-miniprogram/tabs/tabs.js
-!miniprogram_npm/tdesign-miniprogram/tabs/tabs.wxml

@@ -1,14 +1,14 @@
-import { SEMESTER_WEEKS, WEEK_TITLES, TIME_TITLES } from '../constants/index'
-import { nextDate, getColor } from './index'
+import { SEMESTER_WEEKS, WEEK_TITLES, TIME_TITLES } from '../../constants/index'
+import { nextDate, getColor } from '../../utils/index'
 
 /**
- * 判断当周是否属于周数范围
- * @param {string} week 当周周数
+ * 判断学期周是否属于周数范围
+ * @param {string} semesterWeek 学期周
  * @param {string} weeksRange 周数范围
  */
-export const isWeeksWithin = (week, weeksRange) => {
+export const isSemesterWeekWithin = (semesterWeek, weeksRange) => {
     const [ start, end ] = weeksRange.split('-')
-    return week >= parseInt(start) && parseInt(end) >= week
+    return semesterWeek >= parseInt(start) && parseInt(end) >= semesterWeek
 }
 
 /**
@@ -41,7 +41,7 @@ export const formatCourseData = (courseData) => {
         start: parseInt(course.start),
         end: parseInt(course.end),
         duration: parseInt(course.end) - parseInt(course.start) + 1,
-        shortLocat: locationRewrite(course.location),
+        shortLocation: locationRewrite(course.location),
         background: getColor(colorMap, course.title)
     }))
 }
@@ -49,36 +49,36 @@ export const formatCourseData = (courseData) => {
 /**
  * 构建课程查找索引
  * @param courseData 课程数据
- * @returns Map<week, Map<day, Map<startTime, course>>>
+ * @returns Map<semesterWeek, Map<weekday, Map<startTime, course>>>
  */
 export const buildCourseMap = (courseData) => {
     const courseIndex = new Map()
 
     for (const course of courseData) {
-        for (let weeks = 1; weeks <= SEMESTER_WEEKS; weeks++) {
-            if (!isWeeksWithin(weeks, course.weeks)) {
+        for (let semesterWeek = 1; semesterWeek <= SEMESTER_WEEKS; semesterWeek++) {
+            if (!isSemesterWeekWithin(semesterWeek, course.weeks)) {
                 continue
             }
 
             if (
-                (course.odd_even_weeks?.startsWith('单周不上') && weeks % 2 !== 0) ||
-                (course.odd_even_weeks?.startsWith('双周不上') && weeks % 2 === 0)
+                (course.odd_even_weeks?.startsWith('单周不上') && semesterWeek % 2 !== 0) ||
+                (course.odd_even_weeks?.startsWith('双周不上') && semesterWeek % 2 === 0)
             ) {
                 continue
             }
 
-            if (!courseIndex.has(weeks)) {
-                courseIndex.set(weeks, new Map())
+            if (!courseIndex.has(semesterWeek)) {
+                courseIndex.set(semesterWeek, new Map())
             }
 
-            const weeksMap = courseIndex.get(weeks)
-            const week = parseInt(course.week)
+            const semesterWeekMap = courseIndex.get(semesterWeek)
+            const weekday = parseInt(course.week)
 
-            if (!weeksMap.has(week)) {
-                weeksMap.set(week, new Map())
+            if (!semesterWeekMap.has(weekday)) {
+                semesterWeekMap.set(weekday, new Map())
             }
 
-            weeksMap.get(week).set(course.start, course)
+            semesterWeekMap.get(weekday).set(course.start, course)
         }
     }
 
@@ -93,18 +93,18 @@ export const buildCourseMap = (courseData) => {
 export const genForRenderData = (courseMap, startingDate) => {
     const resultData = []
 
-    for (let weeks = 1; weeks <= SEMESTER_WEEKS; weeks++) {
+    for (let semesterWeek = 1; semesterWeek <= SEMESTER_WEEKS; semesterWeek++) {
         const arr = [[]]
-        const weeksMap = courseMap.get(weeks)
+        const semesterWeekMap = courseMap.get(semesterWeek)
 
-        for (let week = 1; week < WEEK_TITLES.length; week++) {
+        for (let weekday = 1; weekday < WEEK_TITLES.length; weekday++) {
             const weekArr = []
-            const dateOffset = (weeks - 1) * 7 + week - 2
+            const dateOffset = (semesterWeek - 1) * 7 + weekday - 2
             const dateStr = nextDate(startingDate, dateOffset)
-            const weekMap = weeksMap?.get(week)
+            const weekdayMap = semesterWeekMap?.get(weekday)
 
             for (let time = 0; time < TIME_TITLES.length; time++) {
-                const course = weekMap?.get(time + 1)
+                const course = weekdayMap?.get(time + 1)
 
                 if (!course) {
                     weekArr[time] = 'free'
@@ -119,7 +119,7 @@ export const genForRenderData = (courseMap, startingDate) => {
             }
 
             arr[0].push(dateStr.substring(5))
-            arr[week] = weekArr
+            arr[weekday] = weekArr
         }
 
         resultData.push(arr)

@@ -1,64 +1,782 @@
 <view class="courseGrid">
-    <view
-        class="weekCol"
-        wx:for="{{ weekTitles }}"
-        wx:for-index="week"
-        wx:key="index"
-    >
-        <!--  顶部，行，星期  -->
-<!--        <view-->
-<!--            class="weekRow {{ ifToday === courseData[weeks][0][week - 1] ? 'today' : '' }}"-->
-<!--        >-->
-<!--            <view class="weekRowBg">-->
-<!--                <view class="weekRowText">{{ item }}</view>-->
-<!--                <view class="weekRowDate">{{ courseData[weeks][0][week - 1] }}</view>-->
-<!--            </view>-->
-<!--        </view>-->
-
-        <block
-            wx:for="{{ timeTitles }}"
-            wx:for-index="time"
-            wx:key="index"
-        >
-            <!-- 左侧，格子，节次和时间点 -->
-            <view
-                class="timeCell"
-                wx:if="{{ week === 0 }}"
-            >
+    <view class="weekCol">
+        <!-- 时间列 -->
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">1</view>
+                <view>{{ timeTitles[0][0] }}</view>
+                <view>{{ timeTitles[0][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">2</view>
+                <view>{{ timeTitles[1][0] }}</view>
+                <view>{{ timeTitles[1][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">3</view>
+                <view>{{ timeTitles[2][0] }}</view>
+                <view>{{ timeTitles[2][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">4</view>
+                <view>{{ timeTitles[3][0] }}</view>
+                <view>{{ timeTitles[3][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">5</view>
+                <view>{{ timeTitles[4][0] }}</view>
+                <view>{{ timeTitles[4][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">6</view>
+                <view>{{ timeTitles[5][0] }}</view>
+                <view>{{ timeTitles[5][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">7</view>
+                <view>{{ timeTitles[6][0] }}</view>
+                <view>{{ timeTitles[6][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">8</view>
+                <view>{{ timeTitles[7][0] }}</view>
+                <view>{{ timeTitles[7][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">9</view>
+                <view>{{ timeTitles[8][0] }}</view>
+                <view>{{ timeTitles[8][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">10</view>
+                <view>{{ timeTitles[9][0] }}</view>
+                <view>{{ timeTitles[9][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">11</view>
+                <view>{{ timeTitles[10][0] }}</view>
+                <view>{{ timeTitles[10][1] }}</view>
+            </view>
+        </view>
+        <view class="timeCell">
+            <view>
+                <view style="font-size: 14px;margin-bottom: 4px;">12</view>
+                <view>{{ timeTitles[11][0] }}</view>
+                <view>{{ timeTitles[11][1] }}</view>
+            </view>
+        </view>
+    </view>
+    <view class="weekCol">
+        <!-- 一 -->
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][0] === 'free' }}" id="label.{{ weekData[0][1] }}.0" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".0"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][0] !== 'ignore' }}" id="course.1.0" class="classCell" style="grid-row-start: {{ weekData[1][0].start }};grid-row-end: {{ weekData[1][0].end + 1 }};background-color: {{ weekData[1][0].background }};" bind:tap="onCourseTap">
                 <view>
-                    <view style="font-size: 14px;margin-bottom: 4px;">{{ time + 1 }}</view>
-                    <view>{{ item[0] }}</view>
-                    <view>{{ item[1] }}</view>
+                    <view class="classCellTitle">{{ weekData[1][0].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][0].shortLocation }}</view>
                 </view>
             </view>
-
-            <view
-                class="classCell emptyCourse"
-                wx:elif="{{ !courseData.length }}"
-            />
-
-            <block wx:elif="{{ courseData[weeks][week][time] !== 'ignore'}}">
-                <!-- 中间，格子，课程 -->
-                <view
-                    id="label.{{ courseData[weeks][0][week] }}.{{ time }}"
-                    class="classCell emptyCourse"
-                    wx:if="{{ courseData[weeks][week][time] === 'free' }}"
-                    bind:tap="labeling"
-                >{{ labelData["label." + courseData[weeks][0][week] + "." + time].value }}</view>
-
-                <view
-                    id="course.{{ weeks }}.{{week}}.{{ time }}"
-                    class="classCell"
-                    style="grid-row-start: {{ courseData[weeks][week][time].start }};grid-row-end: {{ courseData[weeks][week][time].end + 1 }};background-color: {{ courseData[weeks][week][time].background }};"
-                    wx:else
-                    bind:tap="onCourseTap"
-                >
-                    <view>
-                        <view class="classCellTitle">{{ courseData[weeks][week][time].title }}</view>
-                        <view class="classCellLocation">{{ courseData[weeks][week][time].shortLocat }}</view>
-                    </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][1] === 'free' }}" id="label.{{ weekData[0][1] }}.1" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".1"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][1] !== 'ignore' }}" id="course.1.1" class="classCell" style="grid-row-start: {{ weekData[1][1].start }};grid-row-end: {{ weekData[1][1].end + 1 }};background-color: {{ weekData[1][1].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][1].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][1].shortLocation }}</view>
                 </view>
-            </block>
-        </block>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][2] === 'free' }}" id="label.{{ weekData[0][1] }}.2" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".2"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][2] !== 'ignore' }}" id="course.1.2" class="classCell" style="grid-row-start: {{ weekData[1][2].start }};grid-row-end: {{ weekData[1][2].end + 1 }};background-color: {{ weekData[1][2].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][2].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][2].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][3] === 'free' }}" id="label.{{ weekData[0][1] }}.3" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".3"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][3] !== 'ignore' }}" id="course.1.3" class="classCell" style="grid-row-start: {{ weekData[1][3].start }};grid-row-end: {{ weekData[1][3].end + 1 }};background-color: {{ weekData[1][3].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][3].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][3].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][4] === 'free' }}" id="label.{{ weekData[0][1] }}.4" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".4"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][4] !== 'ignore' }}" id="course.1.4" class="classCell" style="grid-row-start: {{ weekData[1][4].start }};grid-row-end: {{ weekData[1][4].end + 1 }};background-color: {{ weekData[1][4].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][4].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][4].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][5] === 'free' }}" id="label.{{ weekData[0][1] }}.5" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".5"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][5] !== 'ignore' }}" id="course.1.5" class="classCell" style="grid-row-start: {{ weekData[1][5].start }};grid-row-end: {{ weekData[1][5].end + 1 }};background-color: {{ weekData[1][5].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][5].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][5].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][6] === 'free' }}" id="label.{{ weekData[0][1] }}.6" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".6"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][6] !== 'ignore' }}" id="course.1.6" class="classCell" style="grid-row-start: {{ weekData[1][6].start }};grid-row-end: {{ weekData[1][6].end + 1 }};background-color: {{ weekData[1][6].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][6].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][6].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][7] === 'free' }}" id="label.{{ weekData[0][1] }}.7" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".7"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][7] !== 'ignore' }}" id="course.1.7" class="classCell" style="grid-row-start: {{ weekData[1][7].start }};grid-row-end: {{ weekData[1][7].end + 1 }};background-color: {{ weekData[1][7].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][7].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][7].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][8] === 'free' }}" id="label.{{ weekData[0][1] }}.8" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".8"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][8] !== 'ignore' }}" id="course.1.8" class="classCell" style="grid-row-start: {{ weekData[1][8].start }};grid-row-end: {{ weekData[1][8].end + 1 }};background-color: {{ weekData[1][8].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][8].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][8].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][9] === 'free' }}" id="label.{{ weekData[0][1] }}.9" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".9"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][9] !== 'ignore' }}" id="course.1.9" class="classCell" style="grid-row-start: {{ weekData[1][9].start }};grid-row-end: {{ weekData[1][9].end + 1 }};background-color: {{ weekData[1][9].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][9].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][9].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][10] === 'free' }}" id="label.{{ weekData[0][1] }}.10" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".10"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][10] !== 'ignore' }}" id="course.1.10" class="classCell" style="grid-row-start: {{ weekData[1][10].start }};grid-row-end: {{ weekData[1][10].end + 1 }};background-color: {{ weekData[1][10].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][10].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][10].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[1][11] === 'free' }}" id="label.{{ weekData[0][1] }}.11" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][1] + ".11"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[1][11] !== 'ignore' }}" id="course.1.11" class="classCell" style="grid-row-start: {{ weekData[1][11].start }};grid-row-end: {{ weekData[1][11].end + 1 }};background-color: {{ weekData[1][11].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[1][11].title }}</view>
+                    <view class="classCellLocation">{{ weekData[1][11].shortLocation }}</view>
+                </view>
+            </view>
+    </view>
+    <view class="weekCol">
+        <!-- 二 -->
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][0] === 'free' }}" id="label.{{ weekData[0][2] }}.0" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".0"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][0] !== 'ignore' }}" id="course.2.0" class="classCell" style="grid-row-start: {{ weekData[2][0].start }};grid-row-end: {{ weekData[2][0].end + 1 }};background-color: {{ weekData[2][0].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][0].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][0].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][1] === 'free' }}" id="label.{{ weekData[0][2] }}.1" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".1"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][1] !== 'ignore' }}" id="course.2.1" class="classCell" style="grid-row-start: {{ weekData[2][1].start }};grid-row-end: {{ weekData[2][1].end + 1 }};background-color: {{ weekData[2][1].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][1].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][1].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][2] === 'free' }}" id="label.{{ weekData[0][2] }}.2" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".2"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][2] !== 'ignore' }}" id="course.2.2" class="classCell" style="grid-row-start: {{ weekData[2][2].start }};grid-row-end: {{ weekData[2][2].end + 1 }};background-color: {{ weekData[2][2].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][2].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][2].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][3] === 'free' }}" id="label.{{ weekData[0][2] }}.3" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".3"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][3] !== 'ignore' }}" id="course.2.3" class="classCell" style="grid-row-start: {{ weekData[2][3].start }};grid-row-end: {{ weekData[2][3].end + 1 }};background-color: {{ weekData[2][3].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][3].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][3].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][4] === 'free' }}" id="label.{{ weekData[0][2] }}.4" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".4"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][4] !== 'ignore' }}" id="course.2.4" class="classCell" style="grid-row-start: {{ weekData[2][4].start }};grid-row-end: {{ weekData[2][4].end + 1 }};background-color: {{ weekData[2][4].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][4].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][4].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][5] === 'free' }}" id="label.{{ weekData[0][2] }}.5" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".5"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][5] !== 'ignore' }}" id="course.2.5" class="classCell" style="grid-row-start: {{ weekData[2][5].start }};grid-row-end: {{ weekData[2][5].end + 1 }};background-color: {{ weekData[2][5].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][5].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][5].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][6] === 'free' }}" id="label.{{ weekData[0][2] }}.6" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".6"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][6] !== 'ignore' }}" id="course.2.6" class="classCell" style="grid-row-start: {{ weekData[2][6].start }};grid-row-end: {{ weekData[2][6].end + 1 }};background-color: {{ weekData[2][6].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][6].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][6].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][7] === 'free' }}" id="label.{{ weekData[0][2] }}.7" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".7"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][7] !== 'ignore' }}" id="course.2.7" class="classCell" style="grid-row-start: {{ weekData[2][7].start }};grid-row-end: {{ weekData[2][7].end + 1 }};background-color: {{ weekData[2][7].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][7].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][7].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][8] === 'free' }}" id="label.{{ weekData[0][2] }}.8" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".8"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][8] !== 'ignore' }}" id="course.2.8" class="classCell" style="grid-row-start: {{ weekData[2][8].start }};grid-row-end: {{ weekData[2][8].end + 1 }};background-color: {{ weekData[2][8].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][8].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][8].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][9] === 'free' }}" id="label.{{ weekData[0][2] }}.9" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".9"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][9] !== 'ignore' }}" id="course.2.9" class="classCell" style="grid-row-start: {{ weekData[2][9].start }};grid-row-end: {{ weekData[2][9].end + 1 }};background-color: {{ weekData[2][9].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][9].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][9].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][10] === 'free' }}" id="label.{{ weekData[0][2] }}.10" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".10"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][10] !== 'ignore' }}" id="course.2.10" class="classCell" style="grid-row-start: {{ weekData[2][10].start }};grid-row-end: {{ weekData[2][10].end + 1 }};background-color: {{ weekData[2][10].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][10].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][10].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[2][11] === 'free' }}" id="label.{{ weekData[0][2] }}.11" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][2] + ".11"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[2][11] !== 'ignore' }}" id="course.2.11" class="classCell" style="grid-row-start: {{ weekData[2][11].start }};grid-row-end: {{ weekData[2][11].end + 1 }};background-color: {{ weekData[2][11].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[2][11].title }}</view>
+                    <view class="classCellLocation">{{ weekData[2][11].shortLocation }}</view>
+                </view>
+            </view>
+    </view>
+    <view class="weekCol">
+        <!-- 三 -->
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][0] === 'free' }}" id="label.{{ weekData[0][3] }}.0" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".0"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][0] !== 'ignore' }}" id="course.3.0" class="classCell" style="grid-row-start: {{ weekData[3][0].start }};grid-row-end: {{ weekData[3][0].end + 1 }};background-color: {{ weekData[3][0].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][0].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][0].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][1] === 'free' }}" id="label.{{ weekData[0][3] }}.1" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".1"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][1] !== 'ignore' }}" id="course.3.1" class="classCell" style="grid-row-start: {{ weekData[3][1].start }};grid-row-end: {{ weekData[3][1].end + 1 }};background-color: {{ weekData[3][1].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][1].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][1].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][2] === 'free' }}" id="label.{{ weekData[0][3] }}.2" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".2"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][2] !== 'ignore' }}" id="course.3.2" class="classCell" style="grid-row-start: {{ weekData[3][2].start }};grid-row-end: {{ weekData[3][2].end + 1 }};background-color: {{ weekData[3][2].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][2].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][2].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][3] === 'free' }}" id="label.{{ weekData[0][3] }}.3" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".3"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][3] !== 'ignore' }}" id="course.3.3" class="classCell" style="grid-row-start: {{ weekData[3][3].start }};grid-row-end: {{ weekData[3][3].end + 1 }};background-color: {{ weekData[3][3].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][3].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][3].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][4] === 'free' }}" id="label.{{ weekData[0][3] }}.4" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".4"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][4] !== 'ignore' }}" id="course.3.4" class="classCell" style="grid-row-start: {{ weekData[3][4].start }};grid-row-end: {{ weekData[3][4].end + 1 }};background-color: {{ weekData[3][4].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][4].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][4].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][5] === 'free' }}" id="label.{{ weekData[0][3] }}.5" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".5"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][5] !== 'ignore' }}" id="course.3.5" class="classCell" style="grid-row-start: {{ weekData[3][5].start }};grid-row-end: {{ weekData[3][5].end + 1 }};background-color: {{ weekData[3][5].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][5].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][5].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][6] === 'free' }}" id="label.{{ weekData[0][3] }}.6" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".6"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][6] !== 'ignore' }}" id="course.3.6" class="classCell" style="grid-row-start: {{ weekData[3][6].start }};grid-row-end: {{ weekData[3][6].end + 1 }};background-color: {{ weekData[3][6].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][6].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][6].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][7] === 'free' }}" id="label.{{ weekData[0][3] }}.7" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".7"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][7] !== 'ignore' }}" id="course.3.7" class="classCell" style="grid-row-start: {{ weekData[3][7].start }};grid-row-end: {{ weekData[3][7].end + 1 }};background-color: {{ weekData[3][7].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][7].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][7].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][8] === 'free' }}" id="label.{{ weekData[0][3] }}.8" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".8"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][8] !== 'ignore' }}" id="course.3.8" class="classCell" style="grid-row-start: {{ weekData[3][8].start }};grid-row-end: {{ weekData[3][8].end + 1 }};background-color: {{ weekData[3][8].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][8].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][8].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][9] === 'free' }}" id="label.{{ weekData[0][3] }}.9" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".9"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][9] !== 'ignore' }}" id="course.3.9" class="classCell" style="grid-row-start: {{ weekData[3][9].start }};grid-row-end: {{ weekData[3][9].end + 1 }};background-color: {{ weekData[3][9].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][9].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][9].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][10] === 'free' }}" id="label.{{ weekData[0][3] }}.10" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".10"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][10] !== 'ignore' }}" id="course.3.10" class="classCell" style="grid-row-start: {{ weekData[3][10].start }};grid-row-end: {{ weekData[3][10].end + 1 }};background-color: {{ weekData[3][10].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][10].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][10].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[3][11] === 'free' }}" id="label.{{ weekData[0][3] }}.11" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][3] + ".11"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[3][11] !== 'ignore' }}" id="course.3.11" class="classCell" style="grid-row-start: {{ weekData[3][11].start }};grid-row-end: {{ weekData[3][11].end + 1 }};background-color: {{ weekData[3][11].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[3][11].title }}</view>
+                    <view class="classCellLocation">{{ weekData[3][11].shortLocation }}</view>
+                </view>
+            </view>
+    </view>
+    <view class="weekCol">
+        <!-- 四 -->
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][0] === 'free' }}" id="label.{{ weekData[0][4] }}.0" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".0"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][0] !== 'ignore' }}" id="course.4.0" class="classCell" style="grid-row-start: {{ weekData[4][0].start }};grid-row-end: {{ weekData[4][0].end + 1 }};background-color: {{ weekData[4][0].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][0].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][0].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][1] === 'free' }}" id="label.{{ weekData[0][4] }}.1" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".1"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][1] !== 'ignore' }}" id="course.4.1" class="classCell" style="grid-row-start: {{ weekData[4][1].start }};grid-row-end: {{ weekData[4][1].end + 1 }};background-color: {{ weekData[4][1].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][1].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][1].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][2] === 'free' }}" id="label.{{ weekData[0][4] }}.2" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".2"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][2] !== 'ignore' }}" id="course.4.2" class="classCell" style="grid-row-start: {{ weekData[4][2].start }};grid-row-end: {{ weekData[4][2].end + 1 }};background-color: {{ weekData[4][2].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][2].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][2].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][3] === 'free' }}" id="label.{{ weekData[0][4] }}.3" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".3"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][3] !== 'ignore' }}" id="course.4.3" class="classCell" style="grid-row-start: {{ weekData[4][3].start }};grid-row-end: {{ weekData[4][3].end + 1 }};background-color: {{ weekData[4][3].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][3].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][3].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][4] === 'free' }}" id="label.{{ weekData[0][4] }}.4" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".4"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][4] !== 'ignore' }}" id="course.4.4" class="classCell" style="grid-row-start: {{ weekData[4][4].start }};grid-row-end: {{ weekData[4][4].end + 1 }};background-color: {{ weekData[4][4].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][4].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][4].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][5] === 'free' }}" id="label.{{ weekData[0][4] }}.5" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".5"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][5] !== 'ignore' }}" id="course.4.5" class="classCell" style="grid-row-start: {{ weekData[4][5].start }};grid-row-end: {{ weekData[4][5].end + 1 }};background-color: {{ weekData[4][5].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][5].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][5].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][6] === 'free' }}" id="label.{{ weekData[0][4] }}.6" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".6"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][6] !== 'ignore' }}" id="course.4.6" class="classCell" style="grid-row-start: {{ weekData[4][6].start }};grid-row-end: {{ weekData[4][6].end + 1 }};background-color: {{ weekData[4][6].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][6].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][6].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][7] === 'free' }}" id="label.{{ weekData[0][4] }}.7" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".7"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][7] !== 'ignore' }}" id="course.4.7" class="classCell" style="grid-row-start: {{ weekData[4][7].start }};grid-row-end: {{ weekData[4][7].end + 1 }};background-color: {{ weekData[4][7].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][7].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][7].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][8] === 'free' }}" id="label.{{ weekData[0][4] }}.8" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".8"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][8] !== 'ignore' }}" id="course.4.8" class="classCell" style="grid-row-start: {{ weekData[4][8].start }};grid-row-end: {{ weekData[4][8].end + 1 }};background-color: {{ weekData[4][8].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][8].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][8].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][9] === 'free' }}" id="label.{{ weekData[0][4] }}.9" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".9"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][9] !== 'ignore' }}" id="course.4.9" class="classCell" style="grid-row-start: {{ weekData[4][9].start }};grid-row-end: {{ weekData[4][9].end + 1 }};background-color: {{ weekData[4][9].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][9].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][9].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][10] === 'free' }}" id="label.{{ weekData[0][4] }}.10" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".10"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][10] !== 'ignore' }}" id="course.4.10" class="classCell" style="grid-row-start: {{ weekData[4][10].start }};grid-row-end: {{ weekData[4][10].end + 1 }};background-color: {{ weekData[4][10].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][10].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][10].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[4][11] === 'free' }}" id="label.{{ weekData[0][4] }}.11" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][4] + ".11"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[4][11] !== 'ignore' }}" id="course.4.11" class="classCell" style="grid-row-start: {{ weekData[4][11].start }};grid-row-end: {{ weekData[4][11].end + 1 }};background-color: {{ weekData[4][11].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[4][11].title }}</view>
+                    <view class="classCellLocation">{{ weekData[4][11].shortLocation }}</view>
+                </view>
+            </view>
+    </view>
+    <view class="weekCol">
+        <!-- 五 -->
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][0] === 'free' }}" id="label.{{ weekData[0][5] }}.0" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".0"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][0] !== 'ignore' }}" id="course.5.0" class="classCell" style="grid-row-start: {{ weekData[5][0].start }};grid-row-end: {{ weekData[5][0].end + 1 }};background-color: {{ weekData[5][0].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][0].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][0].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][1] === 'free' }}" id="label.{{ weekData[0][5] }}.1" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".1"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][1] !== 'ignore' }}" id="course.5.1" class="classCell" style="grid-row-start: {{ weekData[5][1].start }};grid-row-end: {{ weekData[5][1].end + 1 }};background-color: {{ weekData[5][1].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][1].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][1].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][2] === 'free' }}" id="label.{{ weekData[0][5] }}.2" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".2"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][2] !== 'ignore' }}" id="course.5.2" class="classCell" style="grid-row-start: {{ weekData[5][2].start }};grid-row-end: {{ weekData[5][2].end + 1 }};background-color: {{ weekData[5][2].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][2].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][2].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][3] === 'free' }}" id="label.{{ weekData[0][5] }}.3" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".3"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][3] !== 'ignore' }}" id="course.5.3" class="classCell" style="grid-row-start: {{ weekData[5][3].start }};grid-row-end: {{ weekData[5][3].end + 1 }};background-color: {{ weekData[5][3].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][3].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][3].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][4] === 'free' }}" id="label.{{ weekData[0][5] }}.4" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".4"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][4] !== 'ignore' }}" id="course.5.4" class="classCell" style="grid-row-start: {{ weekData[5][4].start }};grid-row-end: {{ weekData[5][4].end + 1 }};background-color: {{ weekData[5][4].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][4].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][4].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][5] === 'free' }}" id="label.{{ weekData[0][5] }}.5" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".5"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][5] !== 'ignore' }}" id="course.5.5" class="classCell" style="grid-row-start: {{ weekData[5][5].start }};grid-row-end: {{ weekData[5][5].end + 1 }};background-color: {{ weekData[5][5].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][5].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][5].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][6] === 'free' }}" id="label.{{ weekData[0][5] }}.6" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".6"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][6] !== 'ignore' }}" id="course.5.6" class="classCell" style="grid-row-start: {{ weekData[5][6].start }};grid-row-end: {{ weekData[5][6].end + 1 }};background-color: {{ weekData[5][6].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][6].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][6].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][7] === 'free' }}" id="label.{{ weekData[0][5] }}.7" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".7"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][7] !== 'ignore' }}" id="course.5.7" class="classCell" style="grid-row-start: {{ weekData[5][7].start }};grid-row-end: {{ weekData[5][7].end + 1 }};background-color: {{ weekData[5][7].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][7].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][7].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][8] === 'free' }}" id="label.{{ weekData[0][5] }}.8" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".8"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][8] !== 'ignore' }}" id="course.5.8" class="classCell" style="grid-row-start: {{ weekData[5][8].start }};grid-row-end: {{ weekData[5][8].end + 1 }};background-color: {{ weekData[5][8].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][8].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][8].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][9] === 'free' }}" id="label.{{ weekData[0][5] }}.9" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".9"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][9] !== 'ignore' }}" id="course.5.9" class="classCell" style="grid-row-start: {{ weekData[5][9].start }};grid-row-end: {{ weekData[5][9].end + 1 }};background-color: {{ weekData[5][9].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][9].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][9].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][10] === 'free' }}" id="label.{{ weekData[0][5] }}.10" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".10"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][10] !== 'ignore' }}" id="course.5.10" class="classCell" style="grid-row-start: {{ weekData[5][10].start }};grid-row-end: {{ weekData[5][10].end + 1 }};background-color: {{ weekData[5][10].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][10].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][10].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[5][11] === 'free' }}" id="label.{{ weekData[0][5] }}.11" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][5] + ".11"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[5][11] !== 'ignore' }}" id="course.5.11" class="classCell" style="grid-row-start: {{ weekData[5][11].start }};grid-row-end: {{ weekData[5][11].end + 1 }};background-color: {{ weekData[5][11].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[5][11].title }}</view>
+                    <view class="classCellLocation">{{ weekData[5][11].shortLocation }}</view>
+                </view>
+            </view>
+    </view>
+    <view class="weekCol">
+        <!-- 六 -->
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][0] === 'free' }}" id="label.{{ weekData[0][6] }}.0" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".0"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][0] !== 'ignore' }}" id="course.6.0" class="classCell" style="grid-row-start: {{ weekData[6][0].start }};grid-row-end: {{ weekData[6][0].end + 1 }};background-color: {{ weekData[6][0].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][0].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][0].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][1] === 'free' }}" id="label.{{ weekData[0][6] }}.1" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".1"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][1] !== 'ignore' }}" id="course.6.1" class="classCell" style="grid-row-start: {{ weekData[6][1].start }};grid-row-end: {{ weekData[6][1].end + 1 }};background-color: {{ weekData[6][1].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][1].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][1].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][2] === 'free' }}" id="label.{{ weekData[0][6] }}.2" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".2"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][2] !== 'ignore' }}" id="course.6.2" class="classCell" style="grid-row-start: {{ weekData[6][2].start }};grid-row-end: {{ weekData[6][2].end + 1 }};background-color: {{ weekData[6][2].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][2].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][2].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][3] === 'free' }}" id="label.{{ weekData[0][6] }}.3" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".3"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][3] !== 'ignore' }}" id="course.6.3" class="classCell" style="grid-row-start: {{ weekData[6][3].start }};grid-row-end: {{ weekData[6][3].end + 1 }};background-color: {{ weekData[6][3].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][3].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][3].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][4] === 'free' }}" id="label.{{ weekData[0][6] }}.4" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".4"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][4] !== 'ignore' }}" id="course.6.4" class="classCell" style="grid-row-start: {{ weekData[6][4].start }};grid-row-end: {{ weekData[6][4].end + 1 }};background-color: {{ weekData[6][4].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][4].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][4].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][5] === 'free' }}" id="label.{{ weekData[0][6] }}.5" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".5"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][5] !== 'ignore' }}" id="course.6.5" class="classCell" style="grid-row-start: {{ weekData[6][5].start }};grid-row-end: {{ weekData[6][5].end + 1 }};background-color: {{ weekData[6][5].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][5].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][5].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][6] === 'free' }}" id="label.{{ weekData[0][6] }}.6" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".6"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][6] !== 'ignore' }}" id="course.6.6" class="classCell" style="grid-row-start: {{ weekData[6][6].start }};grid-row-end: {{ weekData[6][6].end + 1 }};background-color: {{ weekData[6][6].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][6].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][6].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][7] === 'free' }}" id="label.{{ weekData[0][6] }}.7" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".7"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][7] !== 'ignore' }}" id="course.6.7" class="classCell" style="grid-row-start: {{ weekData[6][7].start }};grid-row-end: {{ weekData[6][7].end + 1 }};background-color: {{ weekData[6][7].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][7].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][7].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][8] === 'free' }}" id="label.{{ weekData[0][6] }}.8" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".8"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][8] !== 'ignore' }}" id="course.6.8" class="classCell" style="grid-row-start: {{ weekData[6][8].start }};grid-row-end: {{ weekData[6][8].end + 1 }};background-color: {{ weekData[6][8].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][8].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][8].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][9] === 'free' }}" id="label.{{ weekData[0][6] }}.9" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".9"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][9] !== 'ignore' }}" id="course.6.9" class="classCell" style="grid-row-start: {{ weekData[6][9].start }};grid-row-end: {{ weekData[6][9].end + 1 }};background-color: {{ weekData[6][9].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][9].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][9].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][10] === 'free' }}" id="label.{{ weekData[0][6] }}.10" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".10"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][10] !== 'ignore' }}" id="course.6.10" class="classCell" style="grid-row-start: {{ weekData[6][10].start }};grid-row-end: {{ weekData[6][10].end + 1 }};background-color: {{ weekData[6][10].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][10].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][10].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[6][11] === 'free' }}" id="label.{{ weekData[0][6] }}.11" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][6] + ".11"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[6][11] !== 'ignore' }}" id="course.6.11" class="classCell" style="grid-row-start: {{ weekData[6][11].start }};grid-row-end: {{ weekData[6][11].end + 1 }};background-color: {{ weekData[6][11].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[6][11].title }}</view>
+                    <view class="classCellLocation">{{ weekData[6][11].shortLocation }}</view>
+                </view>
+            </view>
+    </view>
+    <view class="weekCol">
+        <!-- 日 -->
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][0] === 'free' }}" id="label.{{ weekData[0][7] }}.0" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".0"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][0] !== 'ignore' }}" id="course.7.0" class="classCell" style="grid-row-start: {{ weekData[7][0].start }};grid-row-end: {{ weekData[7][0].end + 1 }};background-color: {{ weekData[7][0].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][0].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][0].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][1] === 'free' }}" id="label.{{ weekData[0][7] }}.1" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".1"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][1] !== 'ignore' }}" id="course.7.1" class="classCell" style="grid-row-start: {{ weekData[7][1].start }};grid-row-end: {{ weekData[7][1].end + 1 }};background-color: {{ weekData[7][1].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][1].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][1].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][2] === 'free' }}" id="label.{{ weekData[0][7] }}.2" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".2"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][2] !== 'ignore' }}" id="course.7.2" class="classCell" style="grid-row-start: {{ weekData[7][2].start }};grid-row-end: {{ weekData[7][2].end + 1 }};background-color: {{ weekData[7][2].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][2].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][2].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][3] === 'free' }}" id="label.{{ weekData[0][7] }}.3" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".3"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][3] !== 'ignore' }}" id="course.7.3" class="classCell" style="grid-row-start: {{ weekData[7][3].start }};grid-row-end: {{ weekData[7][3].end + 1 }};background-color: {{ weekData[7][3].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][3].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][3].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][4] === 'free' }}" id="label.{{ weekData[0][7] }}.4" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".4"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][4] !== 'ignore' }}" id="course.7.4" class="classCell" style="grid-row-start: {{ weekData[7][4].start }};grid-row-end: {{ weekData[7][4].end + 1 }};background-color: {{ weekData[7][4].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][4].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][4].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][5] === 'free' }}" id="label.{{ weekData[0][7] }}.5" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".5"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][5] !== 'ignore' }}" id="course.7.5" class="classCell" style="grid-row-start: {{ weekData[7][5].start }};grid-row-end: {{ weekData[7][5].end + 1 }};background-color: {{ weekData[7][5].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][5].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][5].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][6] === 'free' }}" id="label.{{ weekData[0][7] }}.6" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".6"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][6] !== 'ignore' }}" id="course.7.6" class="classCell" style="grid-row-start: {{ weekData[7][6].start }};grid-row-end: {{ weekData[7][6].end + 1 }};background-color: {{ weekData[7][6].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][6].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][6].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][7] === 'free' }}" id="label.{{ weekData[0][7] }}.7" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".7"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][7] !== 'ignore' }}" id="course.7.7" class="classCell" style="grid-row-start: {{ weekData[7][7].start }};grid-row-end: {{ weekData[7][7].end + 1 }};background-color: {{ weekData[7][7].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][7].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][7].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][8] === 'free' }}" id="label.{{ weekData[0][7] }}.8" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".8"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][8] !== 'ignore' }}" id="course.7.8" class="classCell" style="grid-row-start: {{ weekData[7][8].start }};grid-row-end: {{ weekData[7][8].end + 1 }};background-color: {{ weekData[7][8].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][8].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][8].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][9] === 'free' }}" id="label.{{ weekData[0][7] }}.9" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".9"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][9] !== 'ignore' }}" id="course.7.9" class="classCell" style="grid-row-start: {{ weekData[7][9].start }};grid-row-end: {{ weekData[7][9].end + 1 }};background-color: {{ weekData[7][9].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][9].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][9].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][10] === 'free' }}" id="label.{{ weekData[0][7] }}.10" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".10"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][10] !== 'ignore' }}" id="course.7.10" class="classCell" style="grid-row-start: {{ weekData[7][10].start }};grid-row-end: {{ weekData[7][10].end + 1 }};background-color: {{ weekData[7][10].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][10].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][10].shortLocation }}</view>
+                </view>
+            </view>
+            <view wx:if="{{ !weekData.length }}" class="classCell emptyCourse" />
+            <view wx:elif="{{ weekData.length && weekData[7][11] === 'free' }}" id="label.{{ weekData[0][7] }}.11" class="classCell emptyCourse" bind:tap="labeling">{{ labelData["label." + weekData[0][7] + ".11"].value }}</view>
+            <view wx:elif="{{ weekData.length && weekData[7][11] !== 'ignore' }}" id="course.7.11" class="classCell" style="grid-row-start: {{ weekData[7][11].start }};grid-row-end: {{ weekData[7][11].end + 1 }};background-color: {{ weekData[7][11].background }};" bind:tap="onCourseTap">
+                <view>
+                    <view class="classCellTitle">{{ weekData[7][11].title }}</view>
+                    <view class="classCellLocation">{{ weekData[7][11].shortLocation }}</view>
+                </view>
+            </view>
     </view>
 </view>

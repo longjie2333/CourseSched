@@ -54,7 +54,7 @@
                 </view>
                 <view class="popup-list">
                     <t-icon class="icon" name="calendar-1"/>
-                    <text user-select>{{ content.date }}，周{{ weekTitle[content.week] }}，{{ content.time }}</text>
+                    <text user-select>{{ content.date }}，周{{ weekTitles[content.week] }}，{{ content.time }}</text>
                 </view>
             </view>
             <view class="popup-box">

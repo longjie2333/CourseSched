@@ -1,67 +1,53 @@
-import { STORE_KEY } from '../../constants/index'
-import request from '../../utils/request'
+import request, { RequestMethod } from '../../utils/request'
+import { RequestScope } from '../../utils/request-scope'
 import Dialog from 'tdesign-miniprogram/dialog'
+import { commonStore } from '../../modules/common/store'
+import env from '../../env'
 
 Component({
-    options: {
-        pureDataPattern: /^_/
-    },
-    properties: {},
-    data: {
-        _dialogConfig: {},
-        _canShowDialog: false,
-        _noticeNoRemind: false,
-    },
     lifetimes: {
         created() {
+            this.requestScope = new RequestScope()
+        },
+        attached() {
             this.getNotice()
         },
-        ready() {
-            this.showDialog()
+        detached() {
+            this.requestScope.abortAll()
         }
     },
     methods: {
-        getNotice() {
-            setTimeout(async () => {
-                const noRemind = wx.getStorageSync(STORE_KEY.NOTICE_NO_REMIND)
+        async getNotice() {
+            let response
 
-                try {
-                    const { dialog } = await request('notice', this, {
-                        method: 'GET',
-                        skipToast: true
-                    })
+            try {
+                response = await request('notice', {
+                    baseUrl: env.opt,
+                    method: RequestMethod.GET,
+                    scope: this.requestScope,
+                })
+            } catch (error) {
+                // 公告是可选内容；请求层已经记录非取消类错误。
+                return
+            }
 
-                    if (dialog) {
-                        this.setData({
-                            _dialogConfig: {
-                                context: this,
-                                closeOnOverlayClick: true,
-                                confirmBtn: '确定',
-                                ...dialog
-                            },
-                            _canShowDialog: true,
-                            _noticeNoRemind: dialog.pubdate === noRemind,
-                        })
-                    }
-                } catch (err) {
+            const { dialog } = response || {}
 
-                }
-            }, 10)
-        },
-        showDialog() {
-            const { _dialogConfig, _canShowDialog, _noticeNoRemind } = this.data
+            if (!dialog) {
+                return
+            }
 
-            setTimeout(() => {
-                if (_noticeNoRemind) {
-                    return
-                }
+            const { pubdate, ...dialogConfig } = dialog
 
-                if (_canShowDialog) {
-                    Dialog.confirm(_dialogConfig)
-                        .then(() => {
-                            wx.setStorageSync(STORE_KEY.NOTICE_NO_REMIND, _dialogConfig.pubdate)
-                        })
-                }
+            if (pubdate === commonStore.NoticeMarkRead) {
+                return
+            }
+
+            Dialog.confirm({
+                context: this,
+                ...dialogConfig
+            }).then(() => {
+                commonStore.markNoticeRead(pubdate)
             })
         }
     }

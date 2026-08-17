@@ -1,4 +1,4 @@
-import { InfoMessage } from '../../utils/index'
+import { showMessage } from '../../utils/index'
 
 Component({
     properties: {
@@ -32,8 +32,10 @@ Component({
             this.triggerEvent('onTitleTap')
         },
         onVacationTagTap() {
-            InfoMessage(this, '#navbar-message', '别扒拉这按钮，乖乖放假，宝子！', {
-                icon: 'yeh'
+            showMessage('info', '别扒拉这按钮，乖乖放假，宝子！', {
+                context: this,
+                selector: '#navbar-message',
+                icon: 'yeh',
             })
         },
         onWeeksChange() {
@@ -50,18 +52,10 @@ Component({
         },
         onBackTap() {
             wx.navigateBack({
-                fail(err) {
-                    const { errMsg } = err
-
-                    if (!errMsg) {
-                        return
-                    }
-
-                    if (errMsg.indexOf('at first page')) {
-                        wx.redirectTo({
-                            url: '/pages/kb/kb',
-                        })
-                    }
+                fail() {
+                    wx.redirectTo({
+                        url: '/pages/kb/kb',
+                    })
                 }
             })
         }

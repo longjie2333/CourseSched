@@ -9,18 +9,16 @@ export const TIME_TITLES = [
 ]
 
 export const SEMESTER_WEEKS = 20
-export const EXAM_WEEKS = [18, 19]
+export const EXAM_WEEK_INDEXES = [18, 19]
 export const VACATION_FROM = 20
-export const VACATION_TO = -1
-export const UPDATE_INTERVAL_TIME = 3
-export const FEEDBACK_INTERVAL_TIME = 60
+export const VACATION_BEFORE = -1
+export const UPDATE_INTERVAL_DAYS = 3
+export const FEEDBACK_COOLDOWN_MINUTES = 60
 
 export const STORE_KEY = {
-    NOTICE_NO_REMIND: 'noticeNoRemind',
-    FEEDBACK_INTERVAL_TIME: 'feedbackInterval',
     UPDATE_INTERVAL_TIME: 'updateInterval',
-    CACHE_DATA: 'cache',
-    LABEL_DATA: 'label',
+    SCHEDULE_DATA: 'schedule',
     ERROR_LOGS: 'errorLogs',
-    CONFIG: 'config',
+    AUTH: 'auth',
+    COMMON: 'common',
 }

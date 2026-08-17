@@ -28,7 +28,7 @@
         class="result-card"
         icon="{{ { name: 'no-result', size: 50 } }}"
         title="本学期暂无考试安排"
-        wx:elif="{{ examTimeData.length === 0 }}"
+        wx:elif="{{ examList.length === 0 }}"
     />
 
     <view
@@ -38,8 +38,8 @@
         <view
             id="exam.{{ index }}"
             class="examTimeItem"
-            wx:for="{{ examTimeData }}"
-            wx:key="examTimeData"
+            wx:for="{{ examList }}"
+            wx:key="examList"
             wx:if="{{ (weeks + 1) == item.exam_period }}"
             bind:tap="onExamItemTap"
         >
