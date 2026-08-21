@@ -1,1 +1,18 @@
+<view wx:if="{{ visible }}" class="noticeBar">
+    <t-notice-bar
+        content="{{ config.content }}"
+        direction="{{ config.direction }}"
+        interval="{{ config.interval }}"
+        marquee="{{ config.marquee }}"
+        operation="{{ config.operation }}"
+        prefix-icon="{{ config.prefixIcon }}"
+        suffix-icon="{{ config.suffixIcon }}"
+        theme="{{ config.theme }}"
+        visible="{{ visible }}"
+        default-visible="{{ config.defaultVisible }}"
+        bind:click="onBarClick"
+        bind:change="onBarChange"
+    />
+</view>
+
 <t-dialog id="t-dialog" />
