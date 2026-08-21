@@ -1,6 +1,6 @@
 import { STORE_KEY } from '../constants/index'
 
-const MAX_LOGS = 30
+const MAX_LOGS = 100
 const realtimeLog = wx.getRealtimeLogManager()
 
 const readLogs = () => {
@@ -19,20 +19,31 @@ const getCurrentRoute = () => {
     return current.route || ''
 }
 
-export const collectErrorLog = (type, error, extra = {}) => {
+const appendLog = (level, type, message, extra = {}) => {
     const logs = readLogs()
 
     logs.push({
         time: new Date().toISOString(),
+        level,
         type,
         route: getCurrentRoute(),
-        message: error,
+        message,
         extra,
     })
 
     wx.setStorageSync(STORE_KEY.ERROR_LOGS, logs.slice(-MAX_LOGS))
+}
+
+export const collectErrorLog = (type, error, extra = {}) => {
+    appendLog('error', type, error, extra)
 
     realtimeLog.error({ type, error, extra })
+}
+
+export const collectDiagnosticLog = (type, message, extra = {}) => {
+    appendLog('info', type, message, extra)
+
+    realtimeLog.info({ type, message })
 }
 
 export const initErrorLogger = () => {

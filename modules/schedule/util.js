@@ -46,6 +46,77 @@ export const formatCourseData = (courseData) => {
     }))
 }
 
+export const summarizeRawCourseData = (courseData) => {
+    const list = Array.isArray(courseData) ? courseData : []
+    const invalidCount = list.filter(course => !course || typeof course !== 'object').length
+    const missingTimeCount = list.filter(course => (
+        !course ||
+        typeof course !== 'object' ||
+        course.week === undefined ||
+        course.start === undefined ||
+        course.end === undefined ||
+        !course.weeks
+    )).length
+
+    return {
+        isArray: Array.isArray(courseData),
+        count: list.length,
+        invalidCount,
+        missingTimeCount,
+    }
+}
+
+export const summarizeRenderData = (renderData) => {
+    const weeks = Array.isArray(renderData) ? renderData : []
+    let courseCount = 0
+    let freeCount = 0
+    let ignoreCount = 0
+    let invalidCellCount = 0
+
+    for (const week of weeks) {
+        const days = Array.isArray(week) ? week.slice(1) : []
+
+        for (const day of days) {
+            if (!Array.isArray(day)) {
+                invalidCellCount += 1
+                continue
+            }
+
+            for (const item of day) {
+                if (item === 'free') {
+                    freeCount += 1
+                } else if (item === 'ignore') {
+                    ignoreCount += 1
+                } else if (item && typeof item === 'object') {
+                    courseCount += 1
+                } else {
+                    invalidCellCount += 1
+                }
+            }
+        }
+    }
+
+    return {
+        isArray: Array.isArray(renderData),
+        weeks: weeks.length,
+        courseCount,
+        freeCount,
+        ignoreCount,
+        invalidCellCount,
+    }
+}
+
+export const summarizeWeekData = (weekData) => {
+    const week = Array.isArray(weekData) ? weekData : []
+    const summary = summarizeRenderData(week.length ? [week] : week)
+
+    return {
+        ...summary,
+        days: week.length > 1 ? week.length - 1 : 0,
+        dates: Array.isArray(week[0]) ? week[0].length : 0,
+    }
+}
+
 /**
  * 构建课程查找索引
  * @param courseData 课程数据

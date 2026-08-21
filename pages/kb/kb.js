@@ -5,8 +5,10 @@ import { commonStore } from '../../modules/common/store'
 import { EXAM_WEEK_INDEXES, VACATION_FROM, VACATION_BEFORE } from '../../constants/index'
 import { showMessage, getThisDate, getCurrentSemesterWeekIndex } from '../../utils/index'
 import { RequestScope } from '../../utils/request-scope'
+import { collectDiagnosticLog } from '../../utils/error-logger'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
 import { RefreshResult, scheduleStore } from '../../modules/schedule/store'
+import { summarizeRenderData, summarizeWeekData } from '../../modules/schedule/util'
 
 Page({
     data: {
@@ -32,6 +34,9 @@ Page({
         navbarStyle: ''
     },
     onLoad(query) {
+        collectDiagnosticLog('kb_page_load', '课表页 onLoad', {
+            queryKeys: query ? Object.keys(query) : [],
+        })
         this.requestScope = new RequestScope()
 
         this.storeBindings = createStoreBindings(this, {
@@ -58,6 +63,7 @@ Page({
                 if (result === RefreshResult.Updated) {
                     this.initializeScheduleView()
                     showMessage('success', '课程表已更新')
+                    collectDiagnosticLog('kb_updated_background', '后台获取到新课表数据')
                 }
             }
         )
@@ -75,6 +81,7 @@ Page({
         this.loadPage()
     },
     async loadPage() {
+        collectDiagnosticLog('kb_load_page_start', '课表页开始加载数据')
         try {
             await this.loadData()
 
@@ -82,6 +89,11 @@ Page({
                 this.initializeScheduleView()
             }
         } finally {
+            collectDiagnosticLog('kb_load_page_finish', '课表页加载流程结束', {
+                loadStatus: scheduleStore.scheduleLoad.status,
+                courseList: summarizeRenderData(scheduleStore.courseList),
+                currentWeeksIndex: this.data.currentWeeksIndex,
+            })
             wx.hideLoading()
         }
     },
@@ -92,6 +104,12 @@ Page({
     },
     async loadData(options = {}) {
         const result = await this.loadSchedule(this.requestScope, options)
+        collectDiagnosticLog('kb_load_data_result', '页面课表数据加载返回', {
+            result,
+            loadStatus: scheduleStore.scheduleLoad.status,
+            force: Boolean(options.force),
+            courseList: summarizeRenderData(scheduleStore.courseList),
+        })
 
         if (scheduleStore.scheduleLoad.status === 'error') {
             const error = scheduleStore.scheduleLoad.error
@@ -107,6 +125,10 @@ Page({
     },
     initializeScheduleView() {
         if (!scheduleStore.startingDate) {
+            collectDiagnosticLog('kb_initialize_skipped', '缺少开学日期，跳过课表视图初始化', {
+                loadStatus: scheduleStore.scheduleLoad.status,
+                hasCourseList: Boolean(scheduleStore.courseList),
+            })
             return
         }
 
@@ -114,6 +136,16 @@ Page({
         const isVacation = Boolean(weeks >= VACATION_FROM || weeks < VACATION_BEFORE)
 
         const weekData = this.changeWeeksIndex(weeks)
+        const activeWeek = scheduleStore.courseList ? scheduleStore.courseList[weekData.currentWeeksIndex] : null
+
+        collectDiagnosticLog('kb_initialize_view', '初始化课表视图', {
+            currentWeek: weeks,
+            normalizedWeek: weekData.currentWeeksIndex,
+            isVacation,
+            isExamWeek: weekData.isExamWeek,
+            courseList: summarizeRenderData(scheduleStore.courseList),
+            activeWeek: summarizeWeekData(activeWeek),
+        })
 
         this.setData({
             isVacation,
@@ -225,12 +257,19 @@ Page({
         }
     },
     changeWeeksIndex(newWeeksIndex) {
+        const requestedWeeksIndex = newWeeksIndex
         newWeeksIndex = newWeeksIndex > 19 || newWeeksIndex < 0 ? 0 : newWeeksIndex
 
         const newData = {
             currentWeeksIndex: newWeeksIndex,
             isExamWeek: EXAM_WEEK_INDEXES.includes(newWeeksIndex)
         }
+
+        collectDiagnosticLog('kb_change_weeks_index', '切换课表周索引', {
+            requestedWeeksIndex,
+            normalizedWeeksIndex: newWeeksIndex,
+            activeWeek: summarizeWeekData(scheduleStore.courseList ? scheduleStore.courseList[newWeeksIndex] : null),
+        })
 
         return newData
     },

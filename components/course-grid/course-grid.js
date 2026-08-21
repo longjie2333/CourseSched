@@ -1,4 +1,8 @@
 import { TIME_TITLES } from '../../constants/index'
+import { collectDiagnosticLog } from '../../utils/error-logger'
+import { summarizeWeekData } from '../../modules/schedule/util'
+
+const loggedWeekDataSignatures = new Set()
 
 Component({
     properties: {
@@ -13,6 +17,19 @@ Component({
     },
     data: {
         timeTitles: TIME_TITLES,
+    },
+    observers: {
+        weekData(weekData) {
+            const summary = summarizeWeekData(weekData)
+            const signature = JSON.stringify(summary)
+
+            if (loggedWeekDataSignatures.has(signature)) {
+                return
+            }
+
+            loggedWeekDataSignatures.add(signature)
+            collectDiagnosticLog('course_grid_week_data_received', '课程格子组件收到周数据', summary)
+        }
     },
     lifetimes: {
         created() {
