@@ -5,10 +5,12 @@ import { commonStore } from '../../modules/common/store'
 import { EXAM_WEEK_INDEXES, VACATION_FROM, VACATION_BEFORE } from '../../constants/index'
 import { showMessage, getThisDate, getCurrentSemesterWeekIndex } from '../../utils/index'
 import { RequestScope } from '../../utils/request-scope'
-import { collectDiagnosticLog } from '../../utils/error-logger'
+import { collectAnomalyLog, collectDiagnosticLog } from '../../utils/error-logger'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
 import { RefreshResult, scheduleStore } from '../../modules/schedule/store'
-import { summarizeRenderData, summarizeWeekData } from '../../modules/schedule/util'
+import { summarizeRenderData } from '../../modules/schedule/util'
+
+const GRID_RENDER_TIMEOUT = 2000
 
 Page({
     data: {
@@ -81,7 +83,6 @@ Page({
         this.loadPage()
     },
     async loadPage() {
-        collectDiagnosticLog('kb_load_page_start', '课表页开始加载数据')
         try {
             await this.loadData()
 
@@ -89,11 +90,6 @@ Page({
                 this.initializeScheduleView()
             }
         } finally {
-            collectDiagnosticLog('kb_load_page_finish', '课表页加载流程结束', {
-                loadStatus: scheduleStore.scheduleLoad.status,
-                courseList: summarizeRenderData(scheduleStore.courseList),
-                currentWeeksIndex: this.data.currentWeeksIndex,
-            })
             wx.hideLoading()
         }
     },
@@ -108,7 +104,6 @@ Page({
             result,
             loadStatus: scheduleStore.scheduleLoad.status,
             force: Boolean(options.force),
-            courseList: summarizeRenderData(scheduleStore.courseList),
         })
 
         if (scheduleStore.scheduleLoad.status === 'error') {
@@ -136,7 +131,6 @@ Page({
         const isVacation = Boolean(weeks >= VACATION_FROM || weeks < VACATION_BEFORE)
 
         const weekData = this.changeWeeksIndex(weeks)
-        const activeWeek = scheduleStore.courseList ? scheduleStore.courseList[weekData.currentWeeksIndex] : null
 
         collectDiagnosticLog('kb_initialize_view', '初始化课表视图', {
             currentWeek: weeks,
@@ -144,13 +138,14 @@ Page({
             isVacation,
             isExamWeek: weekData.isExamWeek,
             courseList: summarizeRenderData(scheduleStore.courseList),
-            activeWeek: summarizeWeekData(activeWeek),
         })
 
         this.setData({
             isVacation,
             ...weekData
         })
+
+        this.watchGridRender(weekData)
 
         if (weekData.isExamWeek) {
             this.getExamTime()
@@ -256,7 +251,7 @@ Page({
             done()
         }
     },
-    changeWeeksIndex(newWeeksIndex) {
+    changeWeeksIndex(newWeeksIndex, source) {
         const requestedWeeksIndex = newWeeksIndex
         newWeeksIndex = newWeeksIndex > 19 || newWeeksIndex < 0 ? 0 : newWeeksIndex
 
@@ -265,11 +260,14 @@ Page({
             isExamWeek: EXAM_WEEK_INDEXES.includes(newWeeksIndex)
         }
 
-        collectDiagnosticLog('kb_change_weeks_index', '切换课表周索引', {
-            requestedWeeksIndex,
-            normalizedWeeksIndex: newWeeksIndex,
-            activeWeek: summarizeWeekData(scheduleStore.courseList ? scheduleStore.courseList[newWeeksIndex] : null),
-        })
+        if (source && newWeeksIndex !== this.data.currentWeeksIndex) {
+            collectDiagnosticLog('kb_week_switch', '切换课表周', {
+                source,
+                requestedWeeksIndex,
+                normalizedWeeksIndex: newWeeksIndex,
+                isExamWeek: newData.isExamWeek,
+            })
+        }
 
         return newData
     },
@@ -282,7 +280,7 @@ Page({
         })
     },
     onRollback() {
-        const weekData = this.changeWeeksIndex(this.currentWeek())
+        const weekData = this.changeWeeksIndex(this.currentWeek(), 'rollback')
 
         this.setData({
             ...weekData,
@@ -290,13 +288,15 @@ Page({
             show_tabs_tag: false
         })
 
+        this.watchGridRender(weekData)
+
         if (weekData.isExamWeek) {
             this.getExamTime()
         }
     },
     onTabsChangeOrSliding(e) {
         const { value } = e.detail
-        const weekData = this.changeWeeksIndex(value)
+        const weekData = this.changeWeeksIndex(value, 'tabs')
 
         this.setData({
             ...weekData,
@@ -304,9 +304,124 @@ Page({
             show_tabs_tag: this.currentWeek() !== value
         })
 
+        this.watchGridRender(weekData)
+
         if (weekData.isExamWeek) {
             this.getExamTime()
         }
+    },
+    /**
+     * 采集 t-tabs 的内部状态
+     * currentIndex 为 -1 或与页面索引不一致时，整个面板会被移出可视区域，
+     * 表现为课表格子（含无课的默认格子）完全看不到
+     */
+    getTabsSnapshot() {
+        try {
+            const tabs = this.selectComponent('#weekTabs')
+
+            if (!tabs) {
+                return { found: false }
+            }
+
+            const children = tabs.children || []
+            const activeIndexes = []
+            const nameMismatch = []
+            let hasActivatedCount = 0
+            let initializedCount = 0
+
+            children.forEach((child, index) => {
+                const childData = child.data || {}
+
+                if (childData.active) {
+                    activeIndexes.push(index)
+                }
+
+                if (childData.hasActivated) {
+                    hasActivatedCount += 1
+                }
+
+                if (child.initialized) {
+                    initializedCount += 1
+                }
+
+                if (typeof child.getComputedName === 'function' && child.getComputedName() !== `${index}`) {
+                    nameMismatch.push(index)
+                }
+            })
+
+            return {
+                found: true,
+                currentIndex: tabs.data.currentIndex,
+                currentName: typeof tabs.getCurrentName === 'function' ? tabs.getCurrentName() : null,
+                childCount: children.length,
+                tabCount: (tabs.data.tabs || []).length,
+                activeIndexes,
+                hasActivatedCount,
+                initializedCount,
+                nameMismatch,
+            }
+        } catch (error) {
+            return { found: false, error: error.message }
+        }
+    },
+    clearGridRenderWatch() {
+        if (this.gridRenderTimer) {
+            clearTimeout(this.gridRenderTimer)
+            this.gridRenderTimer = null
+        }
+    },
+    /**
+     * 等待当前周的 course-grid 上报渲染结果，超时说明组件根本没有渲染
+     * @param weekData changeWeeksIndex 的返回值
+     */
+    watchGridRender(weekData) {
+        this.clearGridRenderWatch()
+
+        // 考试周渲染的是 exam-time-grid，没有 course-grid
+        if (weekData.isExamWeek) {
+            return
+        }
+
+        const watchedWeeks = weekData.currentWeeksIndex
+
+        // 只认本次等待期间收到的上报
+        this.renderedWeeks = null
+        this.gridRenderTimer = setTimeout(() => {
+            this.gridRenderTimer = null
+
+            if (this.renderedWeeks === watchedWeeks) {
+                return
+            }
+
+            collectAnomalyLog('kb_grid_missing', '课表格子组件未上报渲染结果', {
+                weeks: watchedWeeks,
+                courseList: summarizeRenderData(scheduleStore.courseList),
+                tabs: this.getTabsSnapshot(),
+            })
+        }, GRID_RENDER_TIMEOUT)
+    },
+    /**
+     * course-grid 的渲染结果回调
+     */
+    onGridRendered(e) {
+        const detail = e.detail
+
+        if (detail.weeks !== this.data.currentWeeksIndex) {
+            return
+        }
+
+        this.clearGridRenderWatch()
+        this.renderedWeeks = detail.weeks
+
+        if (detail.visible) {
+            collectDiagnosticLog('kb_grid_rendered', '课表格子渲染完成', detail)
+            return
+        }
+
+        collectAnomalyLog('kb_grid_invisible', '课表格子渲染后不可见', {
+            ...detail,
+            tabs: this.getTabsSnapshot(),
+        })
     },
     calcNavbarStyle() {
         if (!wx.getMenuButtonBoundingClientRect || !systemInfo) {
@@ -363,6 +478,8 @@ Page({
         }
     },
     onUnload() {
+        this.clearGridRenderWatch()
+
         if (this.requestScope) {
             this.requestScope.abortAll()
         }

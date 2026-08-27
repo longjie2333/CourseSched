@@ -2,7 +2,7 @@ import { action, observable, runInAction } from 'mobx-miniprogram'
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
 import { AppError, AppErrorCode } from '../../utils/app-error'
 import { getTimestampAfterDays } from '../../utils/index'
-import { collectDiagnosticLog } from '../../utils/error-logger'
+import { collectAnomalyLog, collectDiagnosticLog } from '../../utils/error-logger'
 import { STORE_KEY, UPDATE_INTERVAL_DAYS } from '../../constants/index'
 import { scheduleService } from './service'
 import { summarizeRawCourseData, summarizeRenderData } from './util'
@@ -92,20 +92,26 @@ export const scheduleStore = observable({
             throw new Error('缺少开学日期')
         }
 
-        collectDiagnosticLog('schedule_normalize_start', '开始保存课表渲染数据', {
-            className: courseListResponse?.clas || null,
-            startingDate: this.startingDate,
-            raw: summarizeRawCourseData(courseListResponse?.detail),
-        })
-
         const renderData = scheduleService.buildRenderData(courseListResponse.detail, this.startingDate)
+        const render = summarizeRenderData(renderData)
 
         this.className = courseListResponse.clas
         this.courseList = renderData
 
         collectDiagnosticLog('schedule_normalize_success', '课表渲染数据已保存到 store', {
-            render: summarizeRenderData(renderData),
+            className: courseListResponse?.clas || null,
+            startingDate: this.startingDate,
+            raw: summarizeRawCourseData(courseListResponse?.detail),
+            render,
         })
+
+        if (!render.weeks || render.brokenWeeks) {
+            collectAnomalyLog('schedule_render_empty', '课表渲染数据结构异常', {
+                startingDate: this.startingDate,
+                raw: summarizeRawCourseData(courseListResponse?.detail),
+                render,
+            })
+        }
     }),
 
     /**
@@ -159,16 +165,26 @@ export const scheduleStore = observable({
         }
 
         if (!options.force && this.courseList) {
-            this.scheduleLoad = { status: 'ready', isStale: false }
+            const cachedRender = summarizeRenderData(this.courseList)
+            const stale = Boolean(!this.expiredAt || Date.now() > this.expiredAt)
+
+            this.scheduleLoad = { status: 'ready', isStale: stale }
             collectDiagnosticLog('schedule_load_cache_ready', '使用本地课表缓存', {
-                render: summarizeRenderData(this.courseList),
+                stale,
+                expiredAt: this.expiredAt || null,
+                render: cachedRender,
             })
 
-            if (!this.expiredAt || Date.now() > this.expiredAt) {
-                this.scheduleLoad = { status: 'ready', isStale: true }
-                collectDiagnosticLog('schedule_load_cache_stale', '课表缓存已过期，开始后台刷新', {
+            // 结构异常的旧缓存会一直被复用，页面表现为课表格子完全不渲染
+            if (!cachedRender.weeks || cachedRender.brokenWeeks) {
+                collectAnomalyLog('schedule_cache_broken', '本地课表缓存结构异常', {
+                    startingDate: this.startingDate || null,
                     expiredAt: this.expiredAt || null,
+                    render: cachedRender,
                 })
+            }
+
+            if (stale) {
                 // 清空上一次事件值，使连续两次 Updated 仍能触发页面 reaction。
                 this.refreshed = null
 
@@ -178,7 +194,6 @@ export const scheduleStore = observable({
                         collectDiagnosticLog('schedule_background_refresh_result', '后台刷新课表完成', {
                             changed: summed,
                             startingDate: startingDateResponse || null,
-                            raw: summarizeRawCourseData(courseListResponse?.detail),
                         })
 
                         runInAction(() => {
@@ -226,7 +241,6 @@ export const scheduleStore = observable({
             collectDiagnosticLog('schedule_load_success', '课表加载完成', {
                 result: RefreshResult.Loaded,
                 startingDate: startingDateResponse || null,
-                render: summarizeRenderData(this.courseList),
             })
             return RefreshResult.Loaded
         } catch (error) {

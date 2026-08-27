@@ -67,7 +67,7 @@ export default function request(path, options = {}) {
     return new Promise((resolve, reject) => {
         const failed = (error) => {
             if (error.code !== AppErrorCode.CANCELLED) {
-                collectErrorLog('request_failed', error.message, error.stack)
+                collectErrorLog('request_failed', error.message)
             }
 
             reject(error)

@@ -1,11 +1,8 @@
 import request, { AuthRequirement } from '../../utils/request'
-import { collectDiagnosticLog } from '../../utils/error-logger'
 import {
     buildCourseMap,
     formatCourseData,
     genForRenderData,
-    summarizeRawCourseData,
-    summarizeRenderData,
 } from './util'
 
 export const scheduleService = {
@@ -59,17 +56,9 @@ export const scheduleService = {
      * @param startingDate 开学日期
      */
     buildRenderData(detail, startingDate) {
-        collectDiagnosticLog('schedule_render_build_start', '开始构建课表渲染数据', {
-            startingDate,
-            raw: summarizeRawCourseData(detail),
-        })
         const formatted = formatCourseData(detail)
         const courseMap = buildCourseMap(formatted)
-        const renderData = genForRenderData(courseMap, startingDate)
-        collectDiagnosticLog('schedule_render_build_success', '课表渲染数据构建完成', {
-            formattedCount: formatted.length,
-            render: summarizeRenderData(renderData),
-        })
-        return renderData
+
+        return genForRenderData(courseMap, startingDate)
     },
 }
