@@ -2,10 +2,12 @@ import request from '../../utils/request'
 import { RequestScope } from '../../utils/request-scope'
 import { FEEDBACK_COOLDOWN_MINUTES } from '../../constants/index'
 import { getTimestampAfterMin, formatTimestamp, isNowMoreThan, showMessage } from '../../utils/index'
-import { clearErrorLogs, getErrorReport } from '../../utils/error-logger'
+import { clearErrorLogs, collectAnomalyLog, getErrorReport } from '../../utils/error-logger'
 import { commonStore } from '../../modules/common/store'
 import { authService } from '../../modules/auth/service'
 import env from '../../env'
+
+const FEEDBACK_TMPL_ID = '1d64jYWoWcsubULXUEqCXPrzblA_AoUAcmXVwzp-Tp0'
 
 Component({
     data: {
@@ -22,6 +24,7 @@ Component({
     lifetimes: {
         created() {
             this.requestScope = new RequestScope()
+            this.feedbackSubmitting = false
         },
         detached() {
             this.requestScope.abortAll()
@@ -40,7 +43,44 @@ Component({
         onCalendarTap() {
             this.triggerEvent('onCalendarTap')
         },
+        getLoginCode() {
+            return new Promise((resolve, reject) => {
+                wx.login({
+                    success: ({ code }) => (code ? resolve(code) : reject(new Error('无法获取 code 值，反馈失败了'))),
+                    fail: reject,
+                })
+            })
+        },
+        async resolveSubscribeAccepted(tmplId) {
+            try {
+                const { subscriptionsSetting } = await wx.getSetting({ withSubscriptions: true })
+                const { mainSwitch, itemSettings } = subscriptionsSetting || {}
+
+                if (!mainSwitch) {
+                    return false
+                }
+
+                // 用户已勾选「总是保持以上选择」，沿用已记录的授权结果
+                const savedSetting = itemSettings && itemSettings[tmplId]
+
+                if (savedSetting) {
+                    return savedSetting === 'accept'
+                }
+
+                const requested = await wx.requestSubscribeMessage({ tmplIds: [tmplId] })
+
+                return requested[tmplId] === 'accept'
+            } catch (error) {
+                collectAnomalyLog('feedback_subscribe_failed', error.errMsg || error.message || '订阅消息授权获取失败')
+
+                return false
+            }
+        },
         async confirmFeedback() {
+            if (this.feedbackSubmitting) {
+                return
+            }
+
             const { feedbackContact, feedbackContent, feedbackFiles } = this.data
             const nextFeedbackTime = commonStore.FeedbackNextTick
 
@@ -52,63 +92,51 @@ Component({
                 return this.showFeedbackMessage('error', '为避免频繁反馈，请 ' + formatTimestamp(nextFeedbackTime) + ' 后再反馈')
             }
 
-            const configBase64 = authService.getEncodedCredentials()
-            const files = feedbackFiles.map((file) => {
-                const filePath = file.url
-                const fileSuffix = file.name.split('.').slice(-1)[0].toLowerCase()
-                const imageType = fileSuffix === 'jpg' ? 'jpeg' : fileSuffix
-                const baseFormat = `data:image/${imageType};base64,`
-                const base64 = wx.getFileSystemManager().readFileSync(filePath, 'base64')
+            this.feedbackSubmitting = true
 
-                return baseFormat + base64
+            wx.showLoading({
+                title: '反馈中',
+                mask: true,
             })
 
-            const errorReport = getErrorReport()
-            const tmplId = '1d64jYWoWcsubULXUEqCXPrzblA_AoUAcmXVwzp-Tp0'
-            const reqSubMsg = await wx.requestSubscribeMessage({
-                tmplIds: [tmplId],
-            })
-            const reqSubMsgResult = reqSubMsg[`${tmplId}`]
+            try {
+                const files = feedbackFiles.map((file) => {
+                    const filePath = file.url
+                    const fileSuffix = file.name.split('.').slice(-1)[0].toLowerCase()
+                    const imageType = fileSuffix === 'jpg' ? 'jpeg' : fileSuffix
+                    const baseFormat = `data:image/${imageType};base64,`
+                    const base64 = wx.getFileSystemManager().readFileSync(filePath, 'base64')
 
-            wx.login({
-                success: async (res) => {
-                    if (!res.code) {
-                        return this.showFeedbackMessage('error', '无法获取 code 值，反馈失败了')
+                    return baseFormat + base64
+                })
+
+                await request('feedback', {
+                    baseUrl: env.opt,
+                    scope: this.requestScope,
+                    body: {
+                        code: await this.getLoginCode(),
+                        answer: await this.resolveSubscribeAccepted(FEEDBACK_TMPL_ID),
+                        config: authService.getEncodedCredentials(),
+                        report: getErrorReport(),
+                        contact: feedbackContact,
+                        content: feedbackContent,
+                        files,
                     }
+                })
 
-                    try {
-                        wx.showLoading({
-                            title: '反馈中',
-                            mask: true,
-                        })
+                this.displayFeedbackDialog()
 
-                        await request('feedback', {
-                            baseUrl: env.opt,
-                            scope: this.requestScope,
-                            body: {
-                                code: res.code,
-                                config: configBase64,
-                                contact: feedbackContact,
-                                content: feedbackContent,
-                                report: errorReport,
-                                answer: reqSubMsgResult === 'accept',
-                                files,
-                            }
-                        })
+                this.showFeedbackMessage('success', '感谢您的反馈')
 
-                        this.displayFeedbackDialog()
+                commonStore.setFeedbackNextTick(getTimestampAfterMin(FEEDBACK_COOLDOWN_MINUTES))
+                clearErrorLogs()
+            } catch (err) {
+                this.showFeedbackMessage('error', '关键时刻出问题，反馈失败了')
+            } finally {
+                wx.hideLoading()
 
-                        this.showFeedbackMessage('success', '感谢您的反馈')
-
-                        commonStore.setFeedbackNextTick(getTimestampAfterMin(FEEDBACK_COOLDOWN_MINUTES))
-                        clearErrorLogs()
-                    } catch (err) {
-                        this.showFeedbackMessage('error', '关键时刻出问题，反馈失败了')
-                    } finally {
-                        wx.hideLoading()
-                    }
-                }
-            })
+                this.feedbackSubmitting = false
+            }
         },
         onInputChange(e) {
             const { id } = e.currentTarget

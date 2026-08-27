@@ -1,11 +1,48 @@
 import { STORE_KEY } from '../constants/index'
 
-const MAX_LOGS = 30
-const realtimeLog = wx.getRealtimeLogManager()
+const MAX_LOGS = 100
+const LogLevel = {
+    INFO: 'info',
+    WARN: 'warn',
+    ERROR: 'error',
+}
+
+const realtimeLog = typeof wx.getRealtimeLogManager === 'function' ? wx.getRealtimeLogManager() : null
+
+let logs = null
+let flushTimer = null
 
 const readLogs = () => {
-    const logs = wx.getStorageSync(STORE_KEY.ERROR_LOGS)
-    return Array.isArray(logs) ? logs : []
+    if (logs) {
+        return logs
+    }
+
+    const stored = wx.getStorageSync(STORE_KEY.ERROR_LOGS)
+    logs = Array.isArray(stored) ? stored : []
+
+    return logs
+}
+
+const flushErrorLogs = () => {
+    if (flushTimer) {
+        clearTimeout(flushTimer)
+        flushTimer = null
+    }
+
+    if (logs) {
+        wx.setStorageSync(STORE_KEY.ERROR_LOGS, logs)
+    }
+}
+
+const scheduleFlush = () => {
+    if (flushTimer) {
+        return
+    }
+
+    flushTimer = setTimeout(() => {
+        flushTimer = null
+        wx.setStorage({ key: STORE_KEY.ERROR_LOGS, data: readLogs() })
+    }, 0)
 }
 
 const getCurrentRoute = () => {
@@ -19,30 +56,141 @@ const getCurrentRoute = () => {
     return current.route || ''
 }
 
-export const collectErrorLog = (type, error, extra = {}) => {
-    const logs = readLogs()
-
-    logs.push({
+const appendLog = (level, type, message, extra) => {
+    const entry = {
         time: new Date().toISOString(),
+        level,
         type,
         route: getCurrentRoute(),
-        message: error,
-        extra,
-    })
+        message,
+    }
 
-    wx.setStorageSync(STORE_KEY.ERROR_LOGS, logs.slice(-MAX_LOGS))
+    if (extra && Object.keys(extra).length > 0) {
+        entry.extra = extra
+    }
 
-    realtimeLog.error({ type, error, extra })
+    const buffered = readLogs()
+
+    buffered.push(entry)
+
+    if (buffered.length > MAX_LOGS) {
+        buffered.splice(0, buffered.length - MAX_LOGS)
+    }
+
+    if (level === LogLevel.ERROR) {
+        flushErrorLogs()
+        return
+    }
+
+    scheduleFlush()
+}
+
+/**
+ * 上报实时日志
+ * @param level 日志级别
+ * @param payload 日志内容
+ * @param filterMsg 检索关键字，便于在实时日志中筛选出问题会话
+ */
+const reportRealtime = (level, payload, filterMsg) => {
+    if (!realtimeLog) {
+        return
+    }
+
+    if (filterMsg && typeof realtimeLog.addFilterMsg === 'function') {
+        realtimeLog.addFilterMsg(filterMsg)
+    }
+
+    realtimeLog[level](payload)
+}
+
+/**
+ * 采集运行环境快照，用于定位仅部分机型/版本出现的渲染问题
+ */
+const getEnvSnapshot = () => {
+    const callSafely = (getter) => {
+        if (typeof getter !== 'function') {
+            return {}
+        }
+
+        try {
+            return getter() || {}
+        } catch (error) {
+            return {}
+        }
+    }
+
+    const deviceInfo = callSafely(wx.getDeviceInfo)
+    const appBaseInfo = callSafely(wx.getAppBaseInfo)
+    const accountInfo = callSafely(wx.getAccountInfoSync)
+    const miniProgram = accountInfo.miniProgram || {}
+
+    return {
+        brand: deviceInfo.brand || null,
+        model: deviceInfo.model || null,
+        system: deviceInfo.system || null,
+        platform: deviceInfo.platform || null,
+        SDKVersion: appBaseInfo.SDKVersion || null,
+        hostVersion: appBaseInfo.version || null,
+        theme: appBaseInfo.theme || null,
+        version: miniProgram.version || null,
+        envVersion: miniProgram.envVersion || null,
+    }
+}
+
+/**
+ * 记录错误日志
+ * @param type 日志类型
+ * @param error 错误信息
+ * @param extra 附加数据
+ */
+export const collectErrorLog = (type, error, extra = {}) => {
+    appendLog(LogLevel.ERROR, type, error, extra)
+
+    reportRealtime(LogLevel.ERROR, { type, error, extra }, type)
+}
+
+/**
+ * 记录异常日志：流程未抛错但结果不符合预期（如课表渲染为空）
+ * @param type 日志类型
+ * @param message 日志内容
+ * @param extra 附加数据
+ */
+export const collectAnomalyLog = (type, message, extra = {}) => {
+    appendLog(LogLevel.WARN, type, message, extra)
+
+    reportRealtime(LogLevel.WARN, { type, message, extra }, type)
+}
+
+/**
+ * 记录诊断日志
+ * @param type 日志类型
+ * @param message 日志内容
+ * @param extra 附加数据
+ */
+export const collectDiagnosticLog = (type, message, extra = {}) => {
+    appendLog(LogLevel.INFO, type, message, extra)
+
+    reportRealtime(LogLevel.INFO, { type, message, extra })
 }
 
 export const initErrorLogger = () => {
-    wx.onError((error) => collectErrorLog('app_error', error.message))
+    wx.onError((error) => {
+        try {
+            collectErrorLog('app_error', error.message)
+        } catch {
+            // Avoid error loops
+        }
+    })
 
     wx.onUnhandledRejection((res) => collectErrorLog('unhandled_rejection', res.reason))
 
     wx.onPageNotFound((res) => collectErrorLog('page_not_found', res))
 
     wx.onMemoryWarning((res) => collectErrorLog('memory_warning', res))
+
+    if (typeof wx.onAppHide === 'function') {
+        wx.onAppHide(flushErrorLogs)
+    }
 }
 
 export const getErrorReport = () => {
@@ -59,11 +207,13 @@ export const getErrorReport = () => {
     }, 0)
 
     return {
+        env: getEnvSnapshot(),
         cache: {
             hasCache: Boolean(cache && Object.keys(cache).length),
             className: cache.className || null,
             startingDate: cache.startingDate || null,
             expiredAt: cache.expiredAt || null,
+            weekCount: courseList.length,
             courseCount,
             examCount: Array.isArray(cache.examList) ? cache.examList.length : 0,
         },
@@ -72,5 +222,11 @@ export const getErrorReport = () => {
 }
 
 export const clearErrorLogs = () => {
+    if (flushTimer) {
+        clearTimeout(flushTimer)
+        flushTimer = null
+    }
+
+    logs = []
     wx.removeStorageSync(STORE_KEY.ERROR_LOGS)
 }

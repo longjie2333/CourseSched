@@ -1,0 +1,6 @@
+.noticeBar {
+    border-radius: var(--td-radius-default);
+    background: var(--td-bg-color-container);
+    margin: 0 4px 24rpx;
+    overflow: hidden;
+}

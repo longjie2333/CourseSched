@@ -1,5 +1,9 @@
 import request, { AuthRequirement } from '../../utils/request'
-import { buildCourseMap, formatCourseData, genForRenderData } from './util'
+import {
+    buildCourseMap,
+    formatCourseData,
+    genForRenderData,
+} from './util'
 
 export const scheduleService = {
     /**
@@ -54,6 +58,7 @@ export const scheduleService = {
     buildRenderData(detail, startingDate) {
         const formatted = formatCourseData(detail)
         const courseMap = buildCourseMap(formatted)
+
         return genForRenderData(courseMap, startingDate)
     },
 }

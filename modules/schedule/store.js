@@ -2,8 +2,10 @@ import { action, observable, runInAction } from 'mobx-miniprogram'
 import CryptoJS from '../../miniprogram_npm/crypto-js/index'
 import { AppError, AppErrorCode } from '../../utils/app-error'
 import { getTimestampAfterDays } from '../../utils/index'
+import { collectAnomalyLog, collectDiagnosticLog } from '../../utils/error-logger'
 import { STORE_KEY, UPDATE_INTERVAL_DAYS } from '../../constants/index'
 import { scheduleService } from './service'
+import { summarizeRawCourseData, summarizeRenderData } from './util'
 import { createPersistedStore } from '../../utils/persisted-store'
 
 const persistence = createPersistedStore(
@@ -91,9 +93,25 @@ export const scheduleStore = observable({
         }
 
         const renderData = scheduleService.buildRenderData(courseListResponse.detail, this.startingDate)
+        const render = summarizeRenderData(renderData)
 
         this.className = courseListResponse.clas
         this.courseList = renderData
+
+        collectDiagnosticLog('schedule_normalize_success', '课表渲染数据已保存到 store', {
+            className: courseListResponse?.clas || null,
+            startingDate: this.startingDate,
+            raw: summarizeRawCourseData(courseListResponse?.detail),
+            render,
+        })
+
+        if (!render.weeks || render.brokenWeeks) {
+            collectAnomalyLog('schedule_render_empty', '课表渲染数据结构异常', {
+                startingDate: this.startingDate,
+                raw: summarizeRawCourseData(courseListResponse?.detail),
+                render,
+            })
+        }
     }),
 
     /**
@@ -121,8 +139,16 @@ export const scheduleStore = observable({
      * @returns {Promise<string>} RefreshResult
      */
     loadSchedule: action(async function (scope, options = {}) {
+        collectDiagnosticLog('schedule_load_start', '开始加载课表', {
+            force: Boolean(options.force),
+            hasCache: Boolean(this.courseList),
+            expiredAt: this.expiredAt || null,
+            loadStatus: this.scheduleLoad.status,
+        })
+
         const requestAll = () => {
             if (this.requestPromise) {
+                collectDiagnosticLog('schedule_load_reuse_request', '复用进行中的课表请求')
                 return this.requestPromise
             }
 
@@ -139,16 +165,36 @@ export const scheduleStore = observable({
         }
 
         if (!options.force && this.courseList) {
-            this.scheduleLoad = { status: 'ready', isStale: false }
+            const cachedRender = summarizeRenderData(this.courseList)
+            const stale = Boolean(!this.expiredAt || Date.now() > this.expiredAt)
 
-            if (!this.expiredAt || Date.now() > this.expiredAt) {
-                this.scheduleLoad = { status: 'ready', isStale: true }
+            this.scheduleLoad = { status: 'ready', isStale: stale }
+            collectDiagnosticLog('schedule_load_cache_ready', '使用本地课表缓存', {
+                stale,
+                expiredAt: this.expiredAt || null,
+                render: cachedRender,
+            })
+
+            // 结构异常的旧缓存会一直被复用，页面表现为课表格子完全不渲染
+            if (!cachedRender.weeks || cachedRender.brokenWeeks) {
+                collectAnomalyLog('schedule_cache_broken', '本地课表缓存结构异常', {
+                    startingDate: this.startingDate || null,
+                    expiredAt: this.expiredAt || null,
+                    render: cachedRender,
+                })
+            }
+
+            if (stale) {
                 // 清空上一次事件值，使连续两次 Updated 仍能触发页面 reaction。
                 this.refreshed = null
 
                 requestAll()
                     .then(([startingDateResponse, courseListResponse]) => {
                         const summed = this.updateScheduleMetadata(startingDateResponse, courseListResponse.detail)
+                        collectDiagnosticLog('schedule_background_refresh_result', '后台刷新课表完成', {
+                            changed: summed,
+                            startingDate: startingDateResponse || null,
+                        })
 
                         runInAction(() => {
                             if (summed) {
@@ -165,6 +211,9 @@ export const scheduleStore = observable({
                         })
                     })
                     .catch((error) => {
+                        collectDiagnosticLog('schedule_background_refresh_failed', error.message || '后台刷新课表失败', {
+                            result: this.getFailureResult(error),
+                        })
                         runInAction(() => {
                             this.scheduleLoad = { status: 'ready', isStale: true, error }
                             this.refreshed = this.getFailureResult(error)
@@ -178,6 +227,7 @@ export const scheduleStore = observable({
         }
 
         this.scheduleLoad = { status: 'loading' }
+        collectDiagnosticLog('schedule_load_network', '无可用缓存或强制刷新，进入网络加载')
 
         try {
             const [startingDateResponse, courseListResponse] = await requestAll()
@@ -188,10 +238,17 @@ export const scheduleStore = observable({
                 this.persist()
                 this.scheduleLoad = { status: 'ready', isStale: false }
             })
+            collectDiagnosticLog('schedule_load_success', '课表加载完成', {
+                result: RefreshResult.Loaded,
+                startingDate: startingDateResponse || null,
+            })
             return RefreshResult.Loaded
         } catch (error) {
             runInAction(() => {
                 this.scheduleLoad = { status: 'error', error }
+            })
+            collectDiagnosticLog('schedule_load_failed', error.message || '课表加载失败', {
+                result: this.getFailureResult(error),
             })
             return this.getFailureResult(error)
         }
