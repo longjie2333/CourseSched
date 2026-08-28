@@ -67,11 +67,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[0] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 0 }}"
-            active="{{ currentWeeksIndex === 0 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -82,11 +79,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[1] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 1 }}"
-            active="{{ currentWeeksIndex === 1 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -97,11 +91,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[2] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 2 }}"
-            active="{{ currentWeeksIndex === 2 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -112,11 +103,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[3] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 3 }}"
-            active="{{ currentWeeksIndex === 3 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -127,11 +115,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[4] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 4 }}"
-            active="{{ currentWeeksIndex === 4 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -142,11 +127,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[5] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 5 }}"
-            active="{{ currentWeeksIndex === 5 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -157,11 +139,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[6] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 6 }}"
-            active="{{ currentWeeksIndex === 6 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -172,11 +151,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[7] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 7 }}"
-            active="{{ currentWeeksIndex === 7 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -187,11 +163,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[8] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 8 }}"
-            active="{{ currentWeeksIndex === 8 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -202,11 +175,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[9] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 9 }}"
-            active="{{ currentWeeksIndex === 9 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -217,11 +187,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[10] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 10 }}"
-            active="{{ currentWeeksIndex === 10 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -232,11 +199,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[11] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 11 }}"
-            active="{{ currentWeeksIndex === 11 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -247,11 +211,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[12] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 12 }}"
-            active="{{ currentWeeksIndex === 12 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -262,11 +223,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[13] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 13 }}"
-            active="{{ currentWeeksIndex === 13 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -277,11 +235,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[14] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 14 }}"
-            active="{{ currentWeeksIndex === 14 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -292,11 +247,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[15] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 15 }}"
-            active="{{ currentWeeksIndex === 15 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -307,11 +259,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[16] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 16 }}"
-            active="{{ currentWeeksIndex === 16 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
@@ -322,11 +271,8 @@
         <course-grid
             weekData="{{ courseList ? courseList[17] : [] }}"
             labelData="{{ currentLabelData }}"
-            weeks="{{ 17 }}"
-            active="{{ currentWeeksIndex === 17 }}"
             bind:onCourseTap="displaySomeDetail"
             bind:labeling="displayLabelPopup"
-            bind:rendered="onGridRendered"
         />
     </t-tab-panel>
 
