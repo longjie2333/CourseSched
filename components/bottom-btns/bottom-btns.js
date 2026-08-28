@@ -51,31 +51,6 @@ Component({
                 })
             })
         },
-        async resolveSubscribeAccepted(tmplId) {
-            try {
-                const { subscriptionsSetting } = await wx.getSetting({ withSubscriptions: true })
-                const { mainSwitch, itemSettings } = subscriptionsSetting || {}
-
-                if (!mainSwitch) {
-                    return false
-                }
-
-                // 用户已勾选「总是保持以上选择」，沿用已记录的授权结果
-                const savedSetting = itemSettings && itemSettings[tmplId]
-
-                if (savedSetting) {
-                    return savedSetting === 'accept'
-                }
-
-                const requested = await wx.requestSubscribeMessage({ tmplIds: [tmplId] })
-
-                return requested[tmplId] === 'accept'
-            } catch (error) {
-                collectAnomalyLog('feedback_subscribe_failed', error.errMsg || error.message || '订阅消息授权获取失败')
-
-                return false
-            }
-        },
         async confirmFeedback() {
             if (this.feedbackSubmitting) {
                 return
@@ -110,12 +85,17 @@ Component({
                     return baseFormat + base64
                 })
 
+                const reqSubMsg = await wx.requestSubscribeMessage({
+                    tmplIds: [FEEDBACK_TMPL_ID]
+                })
+                const reqSubMsgResult = reqSubMsg[`${FEEDBACK_TMPL_ID}`]
+
                 await request('feedback', {
                     baseUrl: env.opt,
                     scope: this.requestScope,
                     body: {
                         code: await this.getLoginCode(),
-                        answer: await this.resolveSubscribeAccepted(FEEDBACK_TMPL_ID),
+                        answer: reqSubMsgResult === 'accept',
                         config: authService.getEncodedCredentials(),
                         report: getErrorReport(),
                         contact: feedbackContact,
