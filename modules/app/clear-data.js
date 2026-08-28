@@ -1,5 +1,4 @@
 import { STORE_KEY } from '../../constants/index'
-import { clearErrorLogs } from '../../utils/error-logger'
 import { authStore } from '../auth/store'
 import { commonStore } from '../common/store'
 import { reportStore } from '../report/store'
@@ -11,6 +10,5 @@ export const clearAppData = () => {
     commonStore.clear()
     reportStore.clear()
     scheduleStore.clear()
-    clearErrorLogs()
     wx.removeStorageSync(STORE_KEY.UPDATE_INTERVAL_TIME)
 }

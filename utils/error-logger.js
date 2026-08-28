@@ -1,5 +1,6 @@
 import { STORE_KEY } from '../constants/index'
 
+const CUSTOM_ID_LETTERS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const MAX_LOGS = 100
 const LogLevel = {
     INFO: 'info',
@@ -11,6 +12,7 @@ const realtimeLog = typeof wx.getRealtimeLogManager === 'function' ? wx.getRealt
 
 let logs = null
 let flushTimer = null
+let customId = ''
 
 const readLogs = () => {
     if (logs) {
@@ -104,6 +106,42 @@ const reportRealtime = (level, payload, filterMsg) => {
 }
 
 /**
+ * 初始化微信小程序可视化日志自定义 ID
+ */
+const initCustomId = () => {
+    while (customId.length < 4) {
+        customId += CUSTOM_ID_LETTERS.charAt(Math.floor(Math.random() * CUSTOM_ID_LETTERS.length))
+    }
+
+    customId = `${customId}${Date.now()}`
+
+    if (!wx.obs || typeof wx.obs.setCustomId !== 'function') {
+        return
+    }
+
+    try {
+        wx.obs.setCustomId(customId)
+    } catch (error) {
+        // 采集尚未启动时设置会失败，customId 仍随反馈上报
+    }
+}
+
+/**
+ * 获取当前可视化日志对应的会话 ID
+ */
+const getSessionId = () => {
+    if (!wx.obs || typeof wx.obs.getSessionId !== 'function') {
+        return null
+    }
+
+    try {
+        return wx.obs.getSessionId() || null
+    } catch (error) {
+        return null
+    }
+}
+
+/**
  * 采集运行环境快照，用于定位仅部分机型/版本出现的渲染问题
  */
 const getEnvSnapshot = () => {
@@ -134,6 +172,8 @@ const getEnvSnapshot = () => {
         theme: appBaseInfo.theme || null,
         version: miniProgram.version || null,
         envVersion: miniProgram.envVersion || null,
+        customId: customId || null,
+        sessionId: getSessionId(),
     }
 }
 
@@ -174,6 +214,8 @@ export const collectDiagnosticLog = (type, message, extra = {}) => {
 }
 
 export const initErrorLogger = () => {
+    initCustomId()
+
     wx.onError((error) => {
         try {
             collectErrorLog('app_error', error.message)

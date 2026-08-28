@@ -3,14 +3,26 @@ import { createStoreBindings } from 'mobx-miniprogram-bindings'
 import { authStore } from '../../modules/auth/store'
 import { commonStore } from '../../modules/common/store'
 import { EXAM_WEEK_INDEXES, VACATION_FROM, VACATION_BEFORE } from '../../constants/index'
-import { showMessage, getThisDate, getCurrentSemesterWeekIndex } from '../../utils/index'
+import {
+    showMessage, getThisDate, getCurrentSemesterWeekIndex,
+    normalizeFields, compressNodes
+} from '../../utils/index'
 import { RequestScope } from '../../utils/request-scope'
 import { collectAnomalyLog, collectDiagnosticLog } from '../../utils/error-logger'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
 import { RefreshResult, scheduleStore } from '../../modules/schedule/store'
-import { summarizeRenderData } from '../../modules/schedule/util'
 
-const GRID_RENDER_TIMEOUT = 2000
+// 切周动画为 0.45s，留足余量再测量；连续切周会重置定时器，只测量最后停留的那一周
+const LAYOUT_PROBE_DELAY = 1200
+const LAYOUT_FIELDS = {
+    id: true,
+    rect: true,
+    properties: [],
+    computedStyle: ['height', 'width']
+}
+
+// 高度取不到值或不足 1px 即视为塌陷
+const isFlat = node => !(parseFloat(node.height) > 1)
 
 Page({
     data: {
@@ -35,11 +47,10 @@ Page({
         show_label_popup: false,
         navbarStyle: ''
     },
-    onLoad(query) {
-        collectDiagnosticLog('kb_page_load', '课表页 onLoad', {
-            queryKeys: query ? Object.keys(query) : [],
-        })
+    onLoad() {
         this.requestScope = new RequestScope()
+        this.layoutProbeTimer = null
+        this.layoutSignature = ''
 
         this.storeBindings = createStoreBindings(this, {
             store: scheduleStore,
@@ -65,7 +76,6 @@ Page({
                 if (result === RefreshResult.Updated) {
                     this.initializeScheduleView()
                     showMessage('success', '课程表已更新')
-                    collectDiagnosticLog('kb_updated_background', '后台获取到新课表数据')
                 }
             }
         )
@@ -100,11 +110,6 @@ Page({
     },
     async loadData(options = {}) {
         const result = await this.loadSchedule(this.requestScope, options)
-        collectDiagnosticLog('kb_load_data_result', '页面课表数据加载返回', {
-            result,
-            loadStatus: scheduleStore.scheduleLoad.status,
-            force: Boolean(options.force),
-        })
 
         if (scheduleStore.scheduleLoad.status === 'error') {
             const error = scheduleStore.scheduleLoad.error
@@ -113,17 +118,10 @@ Page({
             if (result === RefreshResult.AuthRequired) {
                 return this.displayLoginDialog()
             }
-
-            return
         }
-
     },
     initializeScheduleView() {
         if (!scheduleStore.startingDate) {
-            collectDiagnosticLog('kb_initialize_skipped', '缺少开学日期，跳过课表视图初始化', {
-                loadStatus: scheduleStore.scheduleLoad.status,
-                hasCourseList: Boolean(scheduleStore.courseList),
-            })
             return
         }
 
@@ -132,24 +130,16 @@ Page({
 
         const weekData = this.changeWeeksIndex(weeks)
 
-        collectDiagnosticLog('kb_initialize_view', '初始化课表视图', {
-            currentWeek: weeks,
-            normalizedWeek: weekData.currentWeeksIndex,
-            isVacation,
-            isExamWeek: weekData.isExamWeek,
-            courseList: summarizeRenderData(scheduleStore.courseList),
-        })
-
         this.setData({
             isVacation,
             ...weekData
         })
 
-        this.watchGridRender(weekData)
-
         if (weekData.isExamWeek) {
             this.getExamTime()
         }
+
+        this.collectPanelLayout('init')
 
         if (isVacation) {
             const period = weeks >= VACATION_FROM ? 'after' : 'before'
@@ -251,25 +241,13 @@ Page({
             done()
         }
     },
-    changeWeeksIndex(newWeeksIndex, source) {
-        const requestedWeeksIndex = newWeeksIndex
+    changeWeeksIndex(newWeeksIndex) {
         newWeeksIndex = newWeeksIndex > 19 || newWeeksIndex < 0 ? 0 : newWeeksIndex
 
-        const newData = {
+        return {
             currentWeeksIndex: newWeeksIndex,
             isExamWeek: EXAM_WEEK_INDEXES.includes(newWeeksIndex)
         }
-
-        if (source && newWeeksIndex !== this.data.currentWeeksIndex) {
-            collectDiagnosticLog('kb_week_switch', '切换课表周', {
-                source,
-                requestedWeeksIndex,
-                normalizedWeeksIndex: newWeeksIndex,
-                isExamWeek: newData.isExamWeek,
-            })
-        }
-
-        return newData
     },
     onWeeksChange(e) {
         const { ifWeeksChanging } = e.detail
@@ -280,7 +258,7 @@ Page({
         })
     },
     onRollback() {
-        const weekData = this.changeWeeksIndex(this.currentWeek(), 'rollback')
+        const weekData = this.changeWeeksIndex(this.currentWeek())
 
         this.setData({
             ...weekData,
@@ -288,15 +266,15 @@ Page({
             show_tabs_tag: false
         })
 
-        this.watchGridRender(weekData)
-
         if (weekData.isExamWeek) {
             this.getExamTime()
         }
+
+        this.collectPanelLayout('rollback')
     },
     onTabsChangeOrSliding(e) {
         const { value } = e.detail
-        const weekData = this.changeWeeksIndex(value, 'tabs')
+        const weekData = this.changeWeeksIndex(value)
 
         this.setData({
             ...weekData,
@@ -304,124 +282,69 @@ Page({
             show_tabs_tag: this.currentWeek() !== value
         })
 
-        this.watchGridRender(weekData)
-
         if (weekData.isExamWeek) {
             this.getExamTime()
         }
+
+        this.collectPanelLayout('switch')
     },
     /**
-     * 采集 t-tabs 的内部状态
-     * currentIndex 为 -1 或与页面索引不一致时，整个面板会被移出可视区域，
-     * 表现为课表格子（含无课的默认格子）完全看不到
+     * 采集全部周面板与当前周课表格子的布局
+     * 空白问题只在真机偶发且逻辑层日志正常，需要布局数据才能判断塌陷发生在哪一层
+     * @param reason 触发场景
      */
-    getTabsSnapshot() {
-        try {
-            const tabs = this.selectComponent('#weekTabs')
-
-            if (!tabs) {
-                return { found: false }
-            }
-
-            const children = tabs.children || []
-            const activeIndexes = []
-            const nameMismatch = []
-            let hasActivatedCount = 0
-            let initializedCount = 0
-
-            children.forEach((child, index) => {
-                const childData = child.data || {}
-
-                if (childData.active) {
-                    activeIndexes.push(index)
-                }
-
-                if (childData.hasActivated) {
-                    hasActivatedCount += 1
-                }
-
-                if (child.initialized) {
-                    initializedCount += 1
-                }
-
-                if (typeof child.getComputedName === 'function' && child.getComputedName() !== `${index}`) {
-                    nameMismatch.push(index)
-                }
-            })
-
-            return {
-                found: true,
-                currentIndex: tabs.data.currentIndex,
-                currentName: typeof tabs.getCurrentName === 'function' ? tabs.getCurrentName() : null,
-                childCount: children.length,
-                tabCount: (tabs.data.tabs || []).length,
-                activeIndexes,
-                hasActivatedCount,
-                initializedCount,
-                nameMismatch,
-            }
-        } catch (error) {
-            return { found: false, error: error.message }
+    collectPanelLayout(reason) {
+        if (this.layoutProbeTimer) {
+            clearTimeout(this.layoutProbeTimer)
         }
-    },
-    clearGridRenderWatch() {
-        if (this.gridRenderTimer) {
-            clearTimeout(this.gridRenderTimer)
-            this.gridRenderTimer = null
-        }
-    },
-    /**
-     * 等待当前周的 course-grid 上报渲染结果，超时说明组件根本没有渲染
-     * @param weekData changeWeeksIndex 的返回值
-     */
-    watchGridRender(weekData) {
-        this.clearGridRenderWatch()
 
-        // 考试周渲染的是 exam-time-grid，没有 course-grid
-        if (weekData.isExamWeek) {
+        this.layoutProbeTimer = setTimeout(() => {
+            this.layoutProbeTimer = null
+
+            wx.createSelectorQuery()
+                .selectAll('#weekTabs >>> .t-tab-panel').fields(LAYOUT_FIELDS)
+                .selectAll('#weekTabs >>> .courseGrid').fields(LAYOUT_FIELDS)
+                .exec(res => this.reportPanelLayout(reason, res || []))
+        }, LAYOUT_PROBE_DELAY)
+    },
+    reportPanelLayout(reason, [panels, grids]) {
+        const weeks = this.data.currentWeeksIndex
+        const isExamWeek = this.data.isExamWeek
+        const panelList = Array.isArray(panels) ? panels : []
+        const gridList = Array.isArray(grids) ? grids : []
+        const grid = gridList[weeks] ? normalizeFields(gridList[weeks]) : null
+
+        // 位置随切周动画变化，只用尺寸判定是否重复，避免每次切周都写入同一份布局
+        const signature = [
+            panelList.length,
+            gridList.length,
+            ...panelList.map(panel => `${panel.width}/${panel.height}`),
+            grid && `${grid.width}/${grid.height}`
+        ].join('|')
+
+        if (signature === this.layoutSignature) {
             return
         }
 
-        const watchedWeeks = weekData.currentWeeksIndex
+        this.layoutSignature = signature
 
-        // 只认本次等待期间收到的上报
-        this.renderedWeeks = null
-        this.gridRenderTimer = setTimeout(() => {
-            this.gridRenderTimer = null
+        const layout = {
+            reason,
+            weeks,
+            panels: compressNodes(panelList),
+            gridCount: gridList.length,
+            gridActive: grid
+        }
+        const collapsed = !panelList.length
+            || panelList.some(isFlat)
+            || Boolean(!isExamWeek && (!grid || isFlat(grid)))
 
-            if (this.renderedWeeks === watchedWeeks) {
-                return
-            }
-
-            collectAnomalyLog('kb_grid_missing', '课表格子组件未上报渲染结果', {
-                weeks: watchedWeeks,
-                courseList: summarizeRenderData(scheduleStore.courseList),
-                tabs: this.getTabsSnapshot(),
-            })
-        }, GRID_RENDER_TIMEOUT)
-    },
-    /**
-     * course-grid 的渲染结果回调
-     */
-    onGridRendered(e) {
-        const detail = e.detail
-
-        if (detail.weeks !== this.data.currentWeeksIndex) {
+        if (collapsed) {
+            collectAnomalyLog('kb_panel_layout_collapsed', '周面板或课表格子高度塌陷', layout)
             return
         }
 
-        this.clearGridRenderWatch()
-        this.renderedWeeks = detail.weeks
-
-        if (detail.visible) {
-            collectDiagnosticLog('kb_grid_rendered', '课表格子渲染完成', detail)
-            return
-        }
-
-        collectAnomalyLog('kb_grid_invisible', '课表格子渲染后不可见', {
-            ...detail,
-            tabs: this.getTabsSnapshot(),
-        })
+        collectDiagnosticLog('kb_panel_layout', '周面板布局快照', layout)
     },
     calcNavbarStyle() {
         if (!wx.getMenuButtonBoundingClientRect || !systemInfo) {
@@ -478,7 +401,10 @@ Page({
         }
     },
     onUnload() {
-        this.clearGridRenderWatch()
+        if (this.layoutProbeTimer) {
+            clearTimeout(this.layoutProbeTimer)
+            this.layoutProbeTimer = null
+        }
 
         if (this.requestScope) {
             this.requestScope.abortAll()

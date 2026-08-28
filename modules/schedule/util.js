@@ -166,15 +166,6 @@ export const summarizeRenderData = (renderData) => {
     return summary
 }
 
-export const summarizeWeekData = (weekData) => {
-    const cells = countWeekCells(weekData)
-
-    return {
-        isArray: Array.isArray(weekData),
-        ...cells,
-    }
-}
-
 /**
  * 构建课程查找索引
  * @param courseData 课程数据

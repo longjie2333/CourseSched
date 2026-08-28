@@ -170,3 +170,49 @@ export const showMessage = (type, content, options = {}) => {
         ...options,
     })
 }
+
+// computedStyle 返回带单位的字符串，rect 返回数值，数值取整以压缩日志体积
+export const normalizeFields = node => Object.keys(node).reduce((normalized, key) => {
+    const value = node[key]
+
+    normalized[key] = typeof value === 'number' ? Math.round(value) : value
+
+    return normalized
+}, {})
+
+/**
+ * 压缩 selectAll 的测量结果
+ * 所有节点取值一致的字段（如 top、bottom、height、width）抽到 shared，
+ * 只把存在差异的字段留在 items 里
+ * @param nodes selectAll 命中的节点
+ */
+export const compressNodes = (nodes) => {
+    const normalized = nodes.map(normalizeFields)
+
+    if (!normalized.length) {
+        return { count: 0, shared: {}, items: [] }
+    }
+
+    const shared = {}
+    const variedKeys = Object.keys(normalized[0]).filter((key) => {
+        if (normalized.every(node => node[key] === normalized[0][key])) {
+            shared[key] = normalized[0][key]
+
+            return false
+        }
+
+        return true
+    })
+
+    return {
+        count: normalized.length,
+        shared,
+        items: variedKeys.length
+          ? normalized.map(node => variedKeys.reduce((varied, key) => {
+              varied[key] = node[key]
+
+              return varied
+          }, {}))
+          : []
+    }
+}
