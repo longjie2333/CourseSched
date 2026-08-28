@@ -3,10 +3,26 @@ import { createStoreBindings } from 'mobx-miniprogram-bindings'
 import { authStore } from '../../modules/auth/store'
 import { commonStore } from '../../modules/common/store'
 import { EXAM_WEEK_INDEXES, VACATION_FROM, VACATION_BEFORE } from '../../constants/index'
-import { showMessage, getThisDate, getCurrentSemesterWeekIndex } from '../../utils/index'
+import {
+    showMessage, getThisDate, getCurrentSemesterWeekIndex,
+    normalizeFields, compressNodes
+} from '../../utils/index'
 import { RequestScope } from '../../utils/request-scope'
+import { collectAnomalyLog, collectDiagnosticLog } from '../../utils/error-logger'
 import { systemInfo } from '../../miniprogram_npm/tdesign-miniprogram/common/utils'
 import { RefreshResult, scheduleStore } from '../../modules/schedule/store'
+
+// 切周动画为 0.45s，留足余量再测量；连续切周会重置定时器，只测量最后停留的那一周
+const LAYOUT_PROBE_DELAY = 1200
+const LAYOUT_FIELDS = {
+    id: true,
+    rect: true,
+    properties: [],
+    computedStyle: ['height', 'width']
+}
+
+// 高度取不到值或不足 1px 即视为塌陷
+const isFlat = node => !(parseFloat(node.height) > 1)
 
 Page({
     data: {
@@ -33,6 +49,8 @@ Page({
     },
     onLoad() {
         this.requestScope = new RequestScope()
+        this.layoutProbeTimer = null
+        this.layoutSignature = ''
 
         this.storeBindings = createStoreBindings(this, {
             store: scheduleStore,
@@ -120,6 +138,8 @@ Page({
         if (weekData.isExamWeek) {
             this.getExamTime()
         }
+
+        this.collectPanelLayout('init')
 
         if (isVacation) {
             const period = weeks >= VACATION_FROM ? 'after' : 'before'
@@ -249,6 +269,8 @@ Page({
         if (weekData.isExamWeek) {
             this.getExamTime()
         }
+
+        this.collectPanelLayout('rollback')
     },
     onTabsChangeOrSliding(e) {
         const { value } = e.detail
@@ -263,6 +285,66 @@ Page({
         if (weekData.isExamWeek) {
             this.getExamTime()
         }
+
+        this.collectPanelLayout('switch')
+    },
+    /**
+     * 采集全部周面板与当前周课表格子的布局
+     * 空白问题只在真机偶发且逻辑层日志正常，需要布局数据才能判断塌陷发生在哪一层
+     * @param reason 触发场景
+     */
+    collectPanelLayout(reason) {
+        if (this.layoutProbeTimer) {
+            clearTimeout(this.layoutProbeTimer)
+        }
+
+        this.layoutProbeTimer = setTimeout(() => {
+            this.layoutProbeTimer = null
+
+            wx.createSelectorQuery()
+                .selectAll('#weekTabs >>> .t-tab-panel').fields(LAYOUT_FIELDS)
+                .selectAll('#weekTabs >>> .courseGrid').fields(LAYOUT_FIELDS)
+                .exec(res => this.reportPanelLayout(reason, res || []))
+        }, LAYOUT_PROBE_DELAY)
+    },
+    reportPanelLayout(reason, [panels, grids]) {
+        const weeks = this.data.currentWeeksIndex
+        const isExamWeek = this.data.isExamWeek
+        const panelList = Array.isArray(panels) ? panels : []
+        const gridList = Array.isArray(grids) ? grids : []
+        const grid = gridList[weeks] ? normalizeFields(gridList[weeks]) : null
+
+        // 位置随切周动画变化，只用尺寸判定是否重复，避免每次切周都写入同一份布局
+        const signature = [
+            panelList.length,
+            gridList.length,
+            ...panelList.map(panel => `${panel.width}/${panel.height}`),
+            grid && `${grid.width}/${grid.height}`
+        ].join('|')
+
+        if (signature === this.layoutSignature) {
+            return
+        }
+
+        this.layoutSignature = signature
+
+        const layout = {
+            reason,
+            weeks,
+            panels: compressNodes(panelList),
+            gridCount: gridList.length,
+            gridActive: grid
+        }
+        const collapsed = !panelList.length
+            || panelList.some(isFlat)
+            || Boolean(!isExamWeek && (!grid || isFlat(grid)))
+
+        if (collapsed) {
+            collectAnomalyLog('kb_panel_layout_collapsed', '周面板或课表格子高度塌陷', layout)
+            return
+        }
+
+        collectDiagnosticLog('kb_panel_layout', '周面板布局快照', layout)
     },
     calcNavbarStyle() {
         if (!wx.getMenuButtonBoundingClientRect || !systemInfo) {
@@ -319,6 +401,11 @@ Page({
         }
     },
     onUnload() {
+        if (this.layoutProbeTimer) {
+            clearTimeout(this.layoutProbeTimer)
+            this.layoutProbeTimer = null
+        }
+
         if (this.requestScope) {
             this.requestScope.abortAll()
         }
