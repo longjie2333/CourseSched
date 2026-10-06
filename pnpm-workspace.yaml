@@ -1,0 +1,2 @@
+patchedDependencies:
+  tdesign-miniprogram@1.10.1: patches/tdesign-miniprogram@1.10.1.patch

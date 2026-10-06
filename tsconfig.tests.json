@@ -1,0 +1,23 @@
+{
+  "extends": "./.weapp-vite/tsconfig.shared.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "erasableSyntaxOnly": false,
+    "resolveJsonModule": true,
+    "types": [
+      "node",
+      "miniprogram-api-typings",
+      "vitest/globals"
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts"
+  ]
+}

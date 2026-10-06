@@ -1,8 +1,0 @@
-@import 'tailwindcss';
-
-@plugin "@iconify/tailwind4" {
-  prefixes: mdi;
-  icon-selector: '.i-{prefix}-{name}';
-}
-
-@source "./**/*.{wxml,js,ts}";

@@ -5,6 +5,7 @@ node_modules
 
 # testing
 coverage
+.tmp/
 
 # next.js
 .next/
@@ -26,6 +27,7 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+src/env.js
 
 # turbo
 .turbo

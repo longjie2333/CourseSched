@@ -51,8 +51,18 @@
   - Use `$weapp-devtools-e2e-best-practices` for serialized DevTools runtime suites, shared automator sessions, and known host compatibility skips.
   - `$native-to-weapp-vite-wevu-migration` when migrating native mini-program projects to `weapp-vite + native`, or further toward Vue SFC / wevu.
 
-## Native Mini-program Authoring
+## Mini-program Authoring
 
-- Keep native page/component structure consistent with the template unless there is a clear migration goal.
+- Use Vue SFC for project-owned pages, layouts, and components.
 - Prefer `weapp-vite generate` or `wv generate` for new app/page/component scaffolds.
-- If migrating this project, first decide whether the target is `weapp-vite + native` or a further Vue SFC / `wevu` migration, then keep each migration wave explicit.
+- Use `<script setup lang="ts">`, `defineAppJson`, `definePageJson`, and `defineComponentJson` according to file role.
+
+## CourseSched Architecture Decision
+
+- The current target is `weapp-vite + Vue SFC + wevu`; this is not a uni-app project.
+- Route pages and project-owned components use `<script setup lang="ts">`; do not add page-level `setData` or native `App/Page/Component` registration back.
+- Cross-page account state uses the store shipped by wevu (`defineStore`, `storeToRefs`, `createStore`). Do not add Pinia.
+- Keep TDesign Mini Program as native third-party components and register them through the configured resolver. Validate named slots and events in WeChat DevTools.
+- Organize source through `pages`, business-focused `features`, and business-neutral `shared`. Do not create empty architectural layers preemptively; small features may stay flat.
+- `patches/tdesign-miniprogram@1.10.1.patch` is a required source artifact. Never rely on manual edits under `node_modules`.
+- Validate behavior-affecting changes with `pnpm check`; validate visual or interaction changes with WeChat DevTools and `wv screenshot`/`wv compare`.
